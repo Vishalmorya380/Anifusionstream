@@ -18,6 +18,7 @@
     transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
+  /* Base Item Styling (Desktop) */
   .carousel-item {
     min-width: 160px; 
     margin: 0 1.2rem;
@@ -27,6 +28,7 @@
     align-items: center;
     cursor: pointer;
     position: relative;
+    text-decoration: none;
   }
 
   /* THE ANIME PORTAL CARD */
@@ -57,7 +59,7 @@
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: destination-out;
     mask-composite: exclude;
-    opacity: 0.5; /* Default thoda visible rakha hai */
+    opacity: 0.5;
     transition: opacity 0.4s ease;
     z-index: 2;
   }
@@ -66,7 +68,6 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* FIX: Grayscale hata diya. Ab ye humesha full color aur bright rahega */
     filter: brightness(0.95) contrast(1.1); 
     transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
   }
@@ -95,11 +96,10 @@
   }
 
   .carousel-item:hover .arch-glass-card::before {
-    opacity: 1; /* Border glow full ho jayega */
+    opacity: 1; 
   }
 
   .carousel-item:hover .arch-glass-card img {
-    /* Hover pe thoda aur bright aur punchy ho jayega */
     filter: brightness(1.15) contrast(1.2);
     transform: scale(1.1);
   }
@@ -144,7 +144,7 @@
     width: 100%;
     height: 60%;
     background: linear-gradient(to top, var(--glow-color), transparent);
-    opacity: 0.2; /* Base glow thoda bada diya hai */
+    opacity: 0.2; 
     z-index: 1;
     transition: opacity 0.4s ease;
     mix-blend-mode: screen;
@@ -153,31 +153,64 @@
   .carousel-item:hover .glass-glow {
     opacity: 0.8;
   }
+
+  /* =========================================================
+     MOBILE RESPONSIVE SIZING
+     ========================================================= */
+  @media (max-width: 640px) {
+    .carousel-item {
+      min-width: 110px; 
+      margin: 0 0.5rem;
+    }
+    .arch-glass-card {
+      width: 100px;
+      height: 145px;
+      border-radius: 50px 50px 8px 8px;
+    }
+    .jp-decor {
+      font-size: 0.6rem;
+      top: 10px;
+      right: 10px;
+    }
+    .pill-glass-title {
+      font-size: 0.65rem;
+      padding: 5px 12px;
+      margin-top: -15px;
+      letter-spacing: 1px;
+    }
+    .carousel-item:hover .arch-glass-card {
+      transform: translateY(-8px);
+    }
+    .carousel-item:hover .pill-glass-title {
+      transform: scale(1.05) translateY(-3px);
+    }
+  }
 </style>
 
 <div class="carousel-wrapper">
   <div id="carouselTrack" class="carousel-track">
     <% 
-    const items = [
-      { name: "Teogonia", glow: "#3b82f6", img: "/images/Teogonia.png" },
-      { name: "Solo Leveling", glow: "#22d3ee", img: "/images/Solo Leveling.png" },
-      { name: "NARUTO", glow: "#f97316", img: "/images/naruto.png" },
-      { name: "POKEMON", glow: "#eab308", img: "/images/pokemon.png" },
-      { name: "Jujutsu Kaisen", glow: "#a855f7", img: "/images/jujutsu kaisen.png" },
-      { name: "Demon Slayer", glow: "#ef4444", img: "/images/Demon Slayer.png" },
-      { name: "Dragon ball", glow: "#f59e0b", img: "/images/Dragon ball.png" },
+   const items = [
+      { name: "Tomb Raider", glow: "#22d3ee", img: "/images/Tomb Raider.png", id: "6a7da4b655e3fa10b91c5ffc" },
+      { name: "PSYREN", glow: "#ef4444", img: "/images/PSYREN.png", id: "6ae5f1a44385ac9dab994633" },
+      { name: "Solo Leveling", glow: "#22d3ee", img: "/images/Solo Leveling.png", id: "69e60ef0074e015198de2599" },
+      { name: "Naruto Shippuden", glow: "#f97316", img: "/images/naruto.png", id: "6a2427062342c893bef1834c" },
+      { name: "Bleach", glow: "#ef4444", img: "/images/Bleach.png", id: "69e5bcd9de07091ad6765664" },
+      { name: "Jujutsu Kaisen", glow: "#a855f7", img: "/images/jujutsu kaisen.png", id: "69ff500c9a15df0941fde343" },
+      { name: "Demon Slayer", glow: "#ef4444", img: "/images/Demon Slayer.png", id: "69e5c9c2de07091ad6765824" },
+      { name: "Teogonia", glow: "#3b82f6", img: "/images/Teogonia.png", id: "69e5cb57de07091ad676585f" }
     ]; 
     %>
 
     <% [...items, ...items].forEach(item => { %>
-      <div class="carousel-item" style="--glow-color: <%= item.glow %>;">
+      <a href="<%= item.id === 'REPLACE_WITH_ID' ? '/' : '/anime/' + item.id %>" class="carousel-item" style="--glow-color: <%= item.glow %>;">
         <div class="arch-glass-card">
           <div class="jp-decor">アニメ</div>
           <img src="<%= item.img %>" alt="<%= item.name %>" />
           <div class="glass-glow"></div>
         </div>
         <div class="pill-glass-title"><%= item.name %></div>
-      </div>
+      </a>
     <% }) %>
   </div>
 </div>
@@ -185,16 +218,18 @@
 <script>
   const track = document.getElementById("carouselTrack");
   
-  // Dynamic width calculation based on card width (150px) + margins (1.2rem = ~19.2px * 2)
-  const itemWidth = 150 + (19.2 * 2); 
-  
   setInterval(() => {
+    // Dynamically calculate width so it flawlessly works on Mobile and Desktop
+    const firstItem = track.children[0];
+    const style = window.getComputedStyle(firstItem);
+    const margins = parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+    const currentItemWidth = firstItem.offsetWidth + margins;
+    
     // Tech-style snap transition
     track.style.transition = "transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)";
-    track.style.transform = `translateX(-${itemWidth}px)`;
+    track.style.transform = `translateX(-${currentItemWidth}px)`;
 
     setTimeout(() => {
-      const firstItem = track.children[0];
       track.appendChild(firstItem);
       track.style.transition = "none";
       track.style.transform = "translateX(0)";

@@ -143,17 +143,20 @@
             <h2 class="text-base md:text-2xl font-black text-white tracking-tight">Latest Release</h2>
         </div>
 
-        <!-- mobile view grid changes -->
-        <div class="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-            <% latestEpisodes.slice(0, 20).forEach(function(episode, index) { %>
-                <div class="episode-glass-card group cursor-pointer p-1.5 rounded-lg md:rounded-xl border border-white/5 transition-all <%= index >= 9 ? 'hidden lg:block' : '' %>"
+        <!-- mobile view grid exactly 3, desktop exactly 4 -->
+        <div class="grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
+            <!-- STRICT SLICE TO 12: Server removes item 13+ completely -->
+            <% latestEpisodes.slice(0, 12).forEach(function(episode, index) { %>
+                <!-- Add hidden md:block only to items 10, 11, and 12 to make mobile exactly 9 -->
+                <div class="episode-glass-card group cursor-pointer p-1.5 rounded-lg md:rounded-xl border border-white/5 transition-all <%= index >= 9 ? 'hidden md:block' : '' %>"
                      data-anime-id="<%= episode.anime ? episode.anime._id : '' %>"
                      data-anime-name="<%= episode.anime ? episode.anime.name : 'Unknown' %>"
                      data-anime-img="<%= episode.anime && episode.anime.imageUrl ? episode.anime.imageUrl : '/images/default.png' %>"
                      data-season="<%= episode.seasonNumber %>"
                      data-episode="<%= episode.episodeNumber %>"
                      data-type="<%= episode.anime && episode.anime.type === 'movie' ? 'movie' : 'series' %>">
-                    <a href="/anime/<%= episode.anime ? episode.anime._id : '' %>" class="block">
+                    
+                    <a href="/anime/<%= episode.anime ? episode.anime._id : '' %>?season=<%= episode.seasonNumber %>&ep=<%= episode.episodeNumber %>" class="block">
                         <div class="relative aspect-video overflow-hidden rounded-md md:rounded-lg">
                             <img src="<%= episode.anime && episode.anime.imageUrl ? episode.anime.imageUrl : '/images/default.png' %>"
                                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
@@ -638,79 +641,71 @@ loadSchedule();
     });
 
     // WATCH HISTORY LOGIC
-  
-    const HISTORY_KEY = `watchHistory_${userData.userId || 'guest'}`;
-    const MAX_HISTORY = 20;
+const HISTORY_KEY = `watchHistory_${userData.userId || 'guest'}`;
+const MAX_HISTORY = 4; // Strictly limit to 4 items max
 
-    function getWatchHistory() {
-        if (!userData.isLoggedIn) return [];
-        const data = localStorage.getItem(HISTORY_KEY);
-        return data ? JSON.parse(data) : [];
+function getWatchHistory() {
+    const data = localStorage.getItem(HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+}
+
+function saveToHistory(animeData) {
+    let history = getWatchHistory();
+    history = history.filter(item => item.animeId !== animeData.animeId);
+    history.unshift({...animeData, watchedAt: Date.now() });
+    history = history.slice(0, MAX_HISTORY); // Keep array clean
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderWatchHistory();
+}
+
+function renderWatchHistory() {
+    const history = getWatchHistory();
+    const section = document.getElementById('watch-history-section');
+    const grid = document.getElementById('watch-history-grid');
+    
+    if (history.length === 0) {
+        section.classList.add('hidden');
+        return;
     }
-
-    function saveToHistory(animeData) {
-        if (!userData.isLoggedIn) return;
-        let history = getWatchHistory();
-        history = history.filter(item => item.animeId !== animeData.animeId);
-        history.unshift({...animeData, watchedAt: Date.now() });
-        history = history.slice(0, MAX_HISTORY);
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-        renderWatchHistory();
-    }
-
-    function renderWatchHistory() {
-        const history = getWatchHistory();
-        const section = document.getElementById('watch-history-section');
-        const grid = document.getElementById('watch-history-grid');
-        if (history.length === 0 || !userData.isLoggedIn) {
-            section.classList.add('hidden');
-            return;
+    section.classList.remove('hidden');
+    grid.innerHTML = '';
+    
+    const uniqueAnimes = {};
+    history.forEach(item => {
+        if (!uniqueAnimes[item.animeId] || uniqueAnimes[item.animeId].watchedAt < item.watchedAt) {
+            uniqueAnimes[item.animeId] = item;
         }
-        section.classList.remove('hidden');
-        grid.innerHTML = '';
-        const uniqueAnimes = {};
-        history.forEach(item => {
-            if (!uniqueAnimes[item.animeId] || uniqueAnimes[item.animeId].watchedAt < item.watchedAt) {
-                uniqueAnimes[item.animeId] = item;
-            }
-        });
-        const displayItems = Object.values(uniqueAnimes).sort((a, b) => b.watchedAt - a.watchedAt);
-        displayItems.forEach((item, index) => {
-            if (index >= 8) return;
-            const hideClass = index >= 6 ? 'hidden lg:block' : '';
-            const isMovie = item.type === 'movie';
-            const card = document.createElement('div');
-            card.className = `episode-glass-card group cursor-pointer p-1 rounded-lg md:rounded-xl border border-white/5 transition-all ${hideClass}`;
-            card.innerHTML = `
-                <a href="/anime/${item.animeId}" class="block">
-                    <div class="relative aspect-video overflow-hidden rounded-md md:rounded-lg">
-                        <img src="${item.animeImg}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                        ${isMovie ? `
-                            <div class="absolute top-0.5 left-0.5 md:top-1 md:left-1 bg-red-600/90 backdrop-blur-md text-[10px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
-                                MOVIE
-                            </div>
-                        ` : `
-                            <div class="absolute top-0.5 left-0.5 md:top-1 md:left-1 bg-black/80 backdrop-blur-md text-[10px] font-black text-white px-1.5 py-0.5 rounded border border-white/10 uppercase">
-                                S${item.season} E${item.episode}
-                            </div>
-                        `}
-                        <div class="absolute top-0.5 right-0.5 md:top-1 md:right-1 bg-purple-600/80 backdrop-blur-md text-[10px] font-black text-white px-1.5 py-0.5 rounded">
-                            CONTINUE
-                        </div>
-                    </div>
-                    <div class="mt-1.5 text-center">
-                        <h3 class="text-white text-[11px] md:text-xs font-bold line-clamp-2 leading-tight h-7 md:h-8">
-                            ${item.animeName}
-                        </h3>
-                        <p class="text-gray-500 text-[10px] uppercase font-black tracking-tighter">
-                            ${isMovie ? 'Film' : `Ep ${item.episode}`}
-                        </p>
-                    </div>
-                </a>
-            `;
-            grid.appendChild(card);
-        });
-    }
+    });
+    
+    const displayItems = Object.values(uniqueAnimes).sort((a, b) => b.watchedAt - a.watchedAt);
+    
+    displayItems.slice(0, MAX_HISTORY).forEach((item, index) => {
+        // Hide the 4th item (index 3) on mobile screens
+        const hideClass = index === 3 ? 'hidden md:block' : '';
+        const isMovie = item.type === 'movie';
+        const card = document.createElement('div');
+        
+        card.className = `episode-glass-card group cursor-pointer p-1 rounded-lg md:rounded-xl border border-white/5 transition-all ${hideClass}`;
+        card.innerHTML = `
+            <a href="/anime/${item.animeId}?season=${item.season}&ep=${item.episode}" class="block">
+                <div class="relative aspect-video overflow-hidden rounded-md md:rounded-lg">
+                    <img src="${item.animeImg}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    ${isMovie ? `
+                        <div class="absolute top-0.5 left-0.5 md:top-1 md:left-1 bg-red-600/90 backdrop-blur-md text-[10px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">MOVIE</div>
+                    ` : `
+                        <div class="absolute top-0.5 left-0.5 md:top-1 md:left-1 bg-black/80 backdrop-blur-md text-[10px] font-black text-white px-1.5 py-0.5 rounded border border-white/10 uppercase">S${item.season} E${item.episode}</div>
+                    `}
+                    <div class="absolute top-0.5 right-0.5 md:top-1 md:right-1 bg-purple-600/80 backdrop-blur-md text-[10px] font-black text-white px-1.5 py-0.5 rounded">CONTINUE</div>
+                </div>
+                <div class="mt-1.5 text-center">
+                    <h3 class="text-white text-[11px] md:text-xs font-bold line-clamp-2 leading-tight h-7 md:h-8">${item.animeName}</h3>
+                    <p class="text-gray-500 text-[10px] uppercase font-black tracking-tighter">${isMovie ? 'Film' : `Ep ${item.episode}`}</p>
+                </div>
+            </a>
+        `;
+        grid.appendChild(card);
+    });
+}
 
     document.getElementById('clear-history-btn').addEventListener('click', function() {
         Swal.fire({
