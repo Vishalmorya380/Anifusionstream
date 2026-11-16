@@ -205,13 +205,14 @@
         <h1 class="text-4xl md:text-5xl font-black tracking-tighter uppercase">
             Admin <span class="text-blue-500">Portal</span>
         </h1>
-        <p class="text-gray-500 mt-2 font-medium">Restricted Access • AniFusion Core</p>
+        <p class="text-gray-500 mt-2 font-medium">Restricted Access • AniFusionstream Core</p>
     </div>
 
     <div class="ui-card-login">
         <%- include('partials/flash') %>
 
-        <form action="/admin/login" method="POST">
+        <!-- FIXED: Wrapped adminPath safely -->
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/login" method="POST">
             <div class="mb-6">
                 <label class="ui-label">Administrator ID</label>
                 <input type="text" name="username" class="ui-input" placeholder="Enter Username" required>
@@ -235,8 +236,8 @@
             </button>
 
             <div class="mt-10 flex flex-col items-center gap-3">
-                <a href="/admin/forgot-password" class="secondary-link uppercase tracking-widest text-[10px]">Reset Admin Key?</a>
-                <a href="/admin/register" class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest hover:text-blue-400">System Registration</a>
+                <!-- FIXED: Wrapped adminPath safely -->
+                <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/forgot-password" class="secondary-link uppercase tracking-widest text-[10px]">Reset Admin Key?</a>
             </div>
         </form>
     </div>

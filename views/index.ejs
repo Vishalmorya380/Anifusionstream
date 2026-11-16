@@ -28,7 +28,7 @@
                 <div class="custom-genre-dropdown relative flex-shrink-0">
                     <input type="hidden" name="genre" id="genre-input" value="<%= typeof selectedGenre !== 'undefined' ? selectedGenre : '' %>">
                     <button type="button" id="genre-toggle" class="group bg-transparent text-gray-400 text-[11px] md:text-xs font-black focus:outline-none cursor-pointer hover:text-blue-400 transition-colors uppercase tracking-wider px-2 py-1 rounded-lg flex items-center gap-1.5 select-none">
-                        <span id="genre-label"><%= selectedGenre ? genres.find(g => g._id.toString() === selectedGenre)?.name || 'Genre' : 'Genre' %></span>
+                        <span id="genre-label"><%= (typeof selectedGenre !== 'undefined' && selectedGenre && typeof genres !== 'undefined' && genres) ? (genres.find(g => g._id.toString() === selectedGenre)?.name || 'Genre') : 'Genre' %></span>
                         <!-- DROPDOWN ARROW ICON - BADA AUR CLEAR -->
                         <svg class="w-3.5 h-3.5 transition-all duration-300 flex-shrink-0 text-blue-400" id="genre-arrow" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
@@ -47,12 +47,14 @@
                             <li class="genre-option px-3 py-2.5 text-xs font-bold text-gray-300 hover:bg-blue-500/15 hover:text-blue-400 cursor-pointer transition-all border-b border-white/5" data-value="">
                                 All Genres
                             </li>
-                            <% genres.forEach(genre => { %>
-                                <li class="genre-option px-3 py-2.5 text-xs font-bold text-gray-300 hover:bg-blue-500/15 hover:text-blue-400 cursor-pointer transition-all border-b border-white/5 <%= selectedGenre === genre._id.toString() ? 'bg-blue-500/10 text-blue-400' : '' %>"
-                                    data-value="<%= genre._id %>">
-                                    <%= genre.name %>
-                                </li>
-                            <% }) %>
+                            <% if (typeof genres !== 'undefined' && genres) { %>
+                                <% genres.forEach(genre => { %>
+                                    <li class="genre-option px-3 py-2.5 text-xs font-bold text-gray-300 hover:bg-blue-500/15 hover:text-blue-400 cursor-pointer transition-all border-b border-white/5 <%= (typeof selectedGenre !== 'undefined' && selectedGenre === genre._id.toString()) ? 'bg-blue-500/10 text-blue-400' : '' %>"
+                                        data-value="<%= genre._id %>">
+                                        <%= genre.name %>
+                                    </li>
+                                <% }) %>
+                            <% } %>
                         </ul>
 
                         <!-- Bottom Scroll Indicator - GLOWING -->
@@ -74,7 +76,7 @@
         <div class="mb-8 glass-panel p-4 md:p-6 rounded-2xl md:rounded-3xl">
             <div class="flex justify-between items-center mb-4 md:mb-6">
                 <h2 class="text-lg md:text-xl font-black text-white uppercase tracking-tighter">
-                    <span class="text-blue-500">Results:</span> <%= totalResults %> Found
+                    <span class="text-blue-500">Results:</span> <%= typeof totalResults !== 'undefined' ? totalResults : 0 %> Found
                 </h2>
                 <a href="/home" class="text-[11px] md:text-xs font-black bg-red-600/20 text-red-500 border border-red-500/30 px-3 py-1.5 rounded-full hover:bg-red-600 hover:text-white transition-all">
                     CLEAR SEARCH ✕
@@ -82,32 +84,34 @@
             </div>
 
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-                <% animes.forEach(anime => { %>
-                    <div class="anime-card-glass rounded-xl md:rounded-2xl p-1.5 transition-all">
-                        <a href="/anime/<%= anime._id %>">
-                            <div class="relative">
-                                <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="w-full aspect-[2/3] object-cover rounded-lg md:rounded-xl shadow-lg">
-                                <% if(anime.type === 'movie') { %>
-                                    <div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">MOVIE</div>
-                                <% } %>
-                            </div>
-                            <p class="text-center mt-2 text-white font-bold text-[11px] md:text-sm line-clamp-2 leading-tight h-7 md:h-10 px-1">
-                                <%= anime.name %>
-                            </p>
-                        </a>
-                    </div>
-                <% }) %>
+                <% if (typeof animes !== 'undefined' && animes) { %>
+                    <% animes.forEach(anime => { %>
+                        <div class="anime-card-glass rounded-xl md:rounded-2xl p-1.5 transition-all">
+                            <a href="/anime/<%= anime._id %>">
+                                <div class="relative">
+                                    <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="w-full aspect-[2/3] object-cover rounded-lg md:rounded-xl shadow-lg">
+                                    <% if(anime.type === 'movie') { %>
+                                        <div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">MOVIE</div>
+                                    <% } %>
+                                </div>
+                                <p class="text-center mt-2 text-white font-bold text-[11px] md:text-sm line-clamp-2 leading-tight h-7 md:h-10 px-1">
+                                    <%= anime.name %>
+                                </p>
+                            </a>
+                        </div>
+                    <% }) %>
+                <% } %>
             </div>
 
             <!-- SERVER SIDE PAGINATION UI -->
-            <% if (totalPages > 1) { %>
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
                 <div class="flex justify-center items-center gap-3 mt-10">
-                    <% if (currentPage > 1) { %>
-                        <a href="?q=<%=searchQuery%>&genre=<%=selectedGenre%>&page=<%=currentPage-1%>" class="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-blue-500/20 text-white font-bold transition-all text-sm">← Prev</a>
+                    <% if (typeof currentPage !== 'undefined' && currentPage > 1) { %>
+                        <a href="?q=<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>&genre=<%= typeof selectedGenre !== 'undefined' ? selectedGenre : '' %>&page=<%= currentPage-1 %>" class="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-blue-500/20 text-white font-bold transition-all text-sm">← Prev</a>
                     <% } %>
-                    <span class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-black shadow-lg shadow-blue-500/30 text-sm">Page <%= currentPage %> of <%= totalPages %></span>
-                    <% if (currentPage < totalPages) { %>
-                        <a href="?q=<%=searchQuery%>&genre=<%=selectedGenre%>&page=<%=currentPage+1%>" class="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-blue-500/20 text-white font-bold transition-all text-sm">Next →</a>
+                    <span class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-black shadow-lg shadow-blue-500/30 text-sm">Page <%= typeof currentPage !== 'undefined' ? currentPage : 1 %> of <%= totalPages %></span>
+                    <% if (typeof currentPage !== 'undefined' && currentPage < totalPages) { %>
+                        <a href="?q=<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>&genre=<%= typeof selectedGenre !== 'undefined' ? selectedGenre : '' %>&page=<%= currentPage+1 %>" class="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-blue-500/20 text-white font-bold transition-all text-sm">Next →</a>
                     <% } %>
                 </div>
             <% } %>
@@ -129,14 +133,13 @@
         </div>
 
         <!-- WATCH HISTORY GRID -->
-
         <div id="watch-history-grid" class="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
             <!-- JS will populate -->
         </div>
     </section>
 
     <!-- LATEST EPISODES -->
-    <% if (latestEpisodes && latestEpisodes.length > 0) { %>
+    <% if (typeof latestEpisodes !== 'undefined' && latestEpisodes && latestEpisodes.length > 0) { %>
     <section class="mt-8 mb-8 md:mt-12 md:mb-12">
         <div class="flex items-center gap-2 mb-4 md:mb-6">
             <div class="w-1 h-5 md:w-1.5 md:h-8 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
@@ -194,7 +197,7 @@
     <% if (typeof isSearchResult === 'undefined' || !isSearchResult) { %>
 
     <!-- LATEST GENRES -->
-    <% if(latestGenres && latestGenres.length > 0) { %>
+    <% if(typeof latestGenres !== 'undefined' && latestGenres && latestGenres.length > 0) { %>
     <section class="mb-8">
         <div class="flex items-center gap-2 mb-4 md:mb-6">
             <div class="w-1 h-5 md:w-1.5 md:h-8 bg-blue-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
@@ -217,25 +220,27 @@
 
                 <!-- NEW FIX: HARDCODED DATA-SKIP="6" Tracker! Prevents race condition bugs -->
                 <div class="anime-scroll flex gap-3 md:gap-5 overflow-x-auto pb-4 snap-x" data-genre-id="<%= genre._id %>" data-skip="6" data-loading="false" data-has-more="true">
-                    <% genre.initialAnimes.forEach(anime => { %>
-                        <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
-                            <a href="/anime/<%= anime._id %>" class="group">
-                                <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-                                    <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <% const daysDiff = (new Date() - new Date(anime.updatedAt)) / (1000 * 60 * 60 * 24);
-                                    if(daysDiff <= 3) { %>
-                                    <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">
-                                        UPDATED
+                    <% if (genre.initialAnimes) { %>
+                        <% genre.initialAnimes.forEach(anime => { %>
+                            <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
+                                <a href="/anime/<%= anime._id %>" class="group">
+                                    <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                                        <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <% const daysDiff = (new Date() - new Date(anime.updatedAt)) / (1000 * 60 * 60 * 24);
+                                        if(daysDiff <= 3) { %>
+                                        <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">
+                                            UPDATED
+                                        </div>
+                                        <% } %>
                                     </div>
-                                    <% } %>
-                                </div>
-                                <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
-                                    <%= anime.name %>
-                                </p>
-                            </a>
-                        </div>
-                    <% }) %>
+                                    <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
+                                        <%= anime.name %>
+                                    </p>
+                                </a>
+                            </div>
+                        <% }) %>
+                    <% } %>
                 </div>
             </div>
         <% }) %>
@@ -243,41 +248,45 @@
     <% } %>
 
     <!-- NORMAL GENRES -->
-    <% normalGenres.forEach(genre => { %>
-        <div class="mb-6 md:mb-10">
-            <div class="flex justify-between items-center mb-3 px-1">
-                <div class="flex items-center gap-2">
-                    <div class="text-blue-500 font-black text-lg md:text-xl">#</div>
-                    <h2 class="text-sm md:text-xl font-black text-white tracking-tight capitalize">
-                        <%= genre.name %>
-                    </h2>
-                </div>
-                <a href="/search?genre=<%= genre._id %>" class="text-gray-500 text-[11px] md:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
-                    View All →
-                </a>
-            </div>
-
-            <!-- NEW FIX: HARDCODED DATA-SKIP="6" Tracker -->
-            <div class="anime-scroll flex gap-3 md:gap-5 overflow-x-auto pb-4 snap-x" data-genre-id="<%= genre._id %>" data-skip="6" data-loading="false" data-has-more="true">
-                <% genre.initialAnimes.forEach(anime => { %>
-                    <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
-                        <a href="/anime/<%= anime._id %>" class="group">
-                            <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-                                <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            </div>
-                            <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
-                                <%= anime.name %>
-                            </p>
-                        </a>
+    <% if (typeof normalGenres !== 'undefined' && normalGenres && normalGenres.length > 0) { %>
+        <% normalGenres.forEach(genre => { %>
+            <div class="mb-6 md:mb-10">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <div class="flex items-center gap-2">
+                        <div class="text-blue-500 font-black text-lg md:text-xl">#</div>
+                        <h2 class="text-sm md:text-xl font-black text-white tracking-tight capitalize">
+                            <%= genre.name %>
+                        </h2>
                     </div>
-                <% }) %>
+                    <a href="/search?genre=<%= genre._id %>" class="text-gray-500 text-[11px] md:text-xs font-black uppercase tracking-widest hover:text-white transition-colors">
+                        View All →
+                    </a>
+                </div>
+
+                <!-- NEW FIX: HARDCODED DATA-SKIP="6" Tracker -->
+                <div class="anime-scroll flex gap-3 md:gap-5 overflow-x-auto pb-4 snap-x" data-genre-id="<%= genre._id %>" data-skip="6" data-loading="false" data-has-more="true">
+                    <% if (genre.initialAnimes) { %>
+                        <% genre.initialAnimes.forEach(anime => { %>
+                            <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
+                                <a href="/anime/<%= anime._id %>" class="group">
+                                    <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                                        <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    </div>
+                                    <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
+                                        <%= anime.name %>
+                                    </p>
+                                </a>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
             </div>
-        </div>
-    <% }) %>
+        <% }) %>
+    <% } %>
 
     <!-- MOVIE GENRES -->
-    <% if(movieGenres && movieGenres.length > 0) { %>
+    <% if(typeof movieGenres !== 'undefined' && movieGenres && movieGenres.length > 0) { %>
     <div class="my-12 border-t-2 border-red-500/30 relative">
         <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0b0e11] px-4">
             <span class="text-red-500 text-xs font-black uppercase whitespace-nowrap">Anime Movies Section</span>
@@ -306,22 +315,24 @@
 
                 <!-- NEW FIX: HARDCODED DATA-SKIP="6" Tracker -->
                 <div class="anime-scroll flex gap-3 md:gap-5 overflow-x-auto pb-4 snap-x justify-start" data-genre-id="<%= genre._id %>" data-skip="6" data-loading="false" data-has-more="true">
-                    <% genre.initialAnimes.forEach(anime => { %>
-                        <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
-                            <a href="/anime/<%= anime._id %>" class="group">
-                                <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-                                    <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">
-                                        MOVIE
+                    <% if (genre.initialAnimes) { %>
+                        <% genre.initialAnimes.forEach(anime => { %>
+                            <div class="anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl">
+                                <a href="/anime/<%= anime._id %>" class="group">
+                                    <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+                                        <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">
+                                            MOVIE
+                                        </div>
                                     </div>
-                                </div>
-                                <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-red-400">
-                                    <%= anime.name %>
-                                </p>
-                            </a>
-                        </div>
-                    <% }) %>
+                                    <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-red-400">
+                                        <%= anime.name %>
+                                    </p>
+                                </a>
+                            </div>
+                        <% }) %>
+                    <% } %>
                 </div>
             </div>
         <% }) %>
@@ -414,6 +425,13 @@ function getCurrentISTDay() {
 async function loadSchedule() {
     try {
         const res = await fetch('/api/upcoming-schedule');
+        
+        // ADDED 429 CHECK
+        if (res.status === 429) {
+            document.getElementById('schedule-content').innerHTML = '<div class="text-center py-10 text-red-500 text-sm font-bold">Rate limit exceeded. Please wait and try again.</div>';
+            return;
+        }
+
         scheduleData = await res.json();
         currentDay = getCurrentISTDay();
         document.querySelectorAll('.day-tab').forEach(tab => {
@@ -470,7 +488,7 @@ loadSchedule();
 <%- include('partials/footer') %>
 
 <script type="application/json" id="user-data">
-    <%- JSON.stringify({ userId: session.userId || session.adminId || null, isLoggedIn: !!(session.userId || session.adminId) }) %>
+    <%- JSON.stringify({ userId: (typeof session !== 'undefined' && session) ? (session.userId || session.adminId || null) : null, isLoggedIn: (typeof session !== 'undefined' && session) ? !!(session.userId || session.adminId) : false }) %>
 </script>
 
 <script>
@@ -483,57 +501,64 @@ loadSchedule();
     const suggestionsDiv = document.getElementById('suggestions');
     let searchTimeout;
 
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        clearTimeout(searchTimeout);
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(searchTimeout);
 
-        if (query.length < 2) {
-            suggestionsDiv.classList.add('hidden');
-            suggestionsDiv.innerHTML = '';
-            return;
-        }
-
-        suggestionsDiv.classList.remove('hidden');
-        suggestionsDiv.innerHTML = `
-            <div class="p-4 animate-pulse space-y-4">
-                <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-3/4"></div></div>
-                <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-1/2"></div></div>
-                <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-2/3"></div></div>
-            </div>
-        `;
-
-        searchTimeout = setTimeout(async () => {
-            try {
-                const res = await fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`);
-                const results = await res.json();
-                
+            if (query.length < 2) {
+                suggestionsDiv.classList.add('hidden');
                 suggestionsDiv.innerHTML = '';
-                if (results.length === 0) {
-                    suggestionsDiv.innerHTML = `<div class="p-4 text-gray-400 text-sm font-medium text-center">No matching anime found</div>`;
-                    return;
-                }
-
-                results.forEach(a => {
-                    const div = document.createElement('div');
-                    div.className = 'p-3 hover:bg-blue-500/10 cursor-pointer text-white text-sm font-semibold transition-all border-b border-white/5 flex items-center gap-3';
-                    div.innerHTML = `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> ${a.name}`;
-                    div.onclick = () => window.location.href = `/anime/${a._id}`;
-                    suggestionsDiv.appendChild(div);
-                });
-            } catch (err) {
-                suggestionsDiv.innerHTML = `<div class="p-4 text-red-400 text-sm font-medium text-center">Failed to load suggestions</div>`;
+                return;
             }
-        }, 300);
-    });
+
+            suggestionsDiv.classList.remove('hidden');
+            suggestionsDiv.innerHTML = `
+                <div class="p-4 animate-pulse space-y-4">
+                    <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-3/4"></div></div>
+                    <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-1/2"></div></div>
+                    <div class="flex gap-3 items-center"><div class="w-4 h-4 rounded-full bg-blue-500/20"></div><div class="h-4 bg-white/10 rounded w-2/3"></div></div>
+                </div>
+            `;
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/search-suggestions?q=${encodeURIComponent(query)}`);
+                    
+                    // ADDED 429 CHECK
+                    if (res.status === 429) {
+                        suggestionsDiv.innerHTML = `<div class="p-4 text-red-400 text-sm font-medium text-center">Too many requests. Please slow down.</div>`;
+                        return;
+                    }
+
+                    const results = await res.json();
+                    
+                    suggestionsDiv.innerHTML = '';
+                    if (results.length === 0) {
+                        suggestionsDiv.innerHTML = `<div class="p-4 text-gray-400 text-sm font-medium text-center">No matching anime found</div>`;
+                        return;
+                    }
+
+                    results.forEach(a => {
+                        const div = document.createElement('div');
+                        div.className = 'p-3 hover:bg-blue-500/10 cursor-pointer text-white text-sm font-semibold transition-all border-b border-white/5 flex items-center gap-3';
+                        div.innerHTML = `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> ${a.name}`;
+                        div.onclick = () => window.location.href = `/anime/${a._id}`;
+                        suggestionsDiv.appendChild(div);
+                    });
+                } catch (err) {
+                    suggestionsDiv.innerHTML = `<div class="p-4 text-red-400 text-sm font-medium text-center">Failed to load suggestions</div>`;
+                }
+            }, 300);
+        });
+    }
 
     document.onclick = (e) => {
-        if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+        if (searchInput && suggestionsDiv && !searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
             suggestionsDiv.classList.add('hidden');
         }
     };
 
-    
-    
     // INFINITE HORIZONTAL SCROLL - BULLETPROOF DOM STATE
    
     document.addEventListener('DOMContentLoaded', () => {
@@ -587,6 +612,15 @@ loadSchedule();
             try {
                 // Send the exact skip number to the backend
                 const res = await fetch(`/api/genre/${genreId}/load?skip=${currentSkip}&limit=${limit}`);
+
+                // ADDED 429 CHECK
+                if (res.status === 429) {
+                    loadingIndicator.remove();
+                    container.dataset.loading = "false";
+                    Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Slow down!', text: 'Too many requests.', showConfirmButton: false, timer: 3000, background: '#151b23', color: '#fff' });
+                    return;
+                }
+
                 const animes = await res.json();
 
                 // UPDATE STATE IMMEDIATELY BEFORE ANY RACE CONDITIONS
@@ -707,27 +741,30 @@ function renderWatchHistory() {
     });
 }
 
-    document.getElementById('clear-history-btn').addEventListener('click', function() {
-        Swal.fire({
-            title: 'Wipe History?',
-            text: "This will permanently clear your recently watched anime.",
-            icon: 'warning',
-            background: '#0b0e11',
-            color: '#ffffff',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#1f2937',
-            confirmButtonText: 'Yes, clear it!',
-            customClass: {
-                popup: 'rounded-2xl border border-white/10 shadow-2xl'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                localStorage.removeItem(HISTORY_KEY);
-                renderWatchHistory();
-            }
-        })
-    });
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    if (clearHistoryBtn) {
+        clearHistoryBtn.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Wipe History?',
+                text: "This will permanently clear your recently watched anime.",
+                icon: 'warning',
+                background: '#0b0e11',
+                color: '#ffffff',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#1f2937',
+                confirmButtonText: 'Yes, clear it!',
+                customClass: {
+                    popup: 'rounded-2xl border border-white/10 shadow-2xl'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem(HISTORY_KEY);
+                    renderWatchHistory();
+                }
+            })
+        });
+    }
 
     document.querySelectorAll('.episode-glass-card').forEach(card => {
         card.addEventListener('click', (e) => {
@@ -787,7 +824,7 @@ function renderWatchHistory() {
     });
 
     document.addEventListener('click', (e) => {
-        if (genreToggle && !genreToggle.contains(e.target) && !genreMenu.contains(e.target)) {
+        if (genreToggle && genreMenu && !genreToggle.contains(e.target) && !genreMenu.contains(e.target)) {
             genreMenu.classList.add('hidden');
             genreArrow.classList.remove('rotated');
         }

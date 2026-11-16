@@ -270,7 +270,8 @@
 
             <!-- Password Input -->
             <div class="input-group">
-                <input type="password" name="password" id="password" class="input-field" placeholder=" " required autocomplete="new-password">
+                <!-- UPDATED: Added minlength="8" for better future-proof frontend validation -->
+                <input type="password" name="password" id="password" class="input-field" placeholder=" " required minlength="8" autocomplete="new-password">
                 <label for="password" class="input-label">Password</label>
                 <i class="fas fa-lock input-icon"></i>
                 <button type="button" id="toggle-password" class="password-toggle">

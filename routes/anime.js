@@ -9,11 +9,12 @@ const Anime = require('../models/Anime');
 const Episode = require('../models/Episode');
 const Comment = require('../models/Comment');
 
-// Rate limiter for comments - 5 comments per minute per IP
+// Rate limiter for comments - 5 comments per minute per IP/Visitor
 const commentLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 5,
     message: 'Too many comments. Please wait.',
+    keyGenerator: (req) => req.visitorId 
 });
 
 // Helper: Validate MongoDB ID
@@ -25,14 +26,6 @@ const cleanComment = (text) => sanitizeHtml(text.trim(), {
     allowedAttributes: {}
 });
 
-// Helper: Get guest identifier - uses session ID
-const getGuestId = (req) => {
-    if (!req.session.guestId) {
-        req.session.guestId = 'guest_' + Math.random().toString(36).substring(2, 15);
-    }
-    return req.session.guestId;
-};
-
 // ==========================================
 // PUBLIC VIEWS
 // ==========================================
@@ -43,7 +36,7 @@ const getGuestId = (req) => {
  */
 router.get('/', async (req, res) => {
     try {
-        // FIXED: Query Episodes directly. Limits to 12. O(1) performance instead of O(N).
+        // Query Episodes directly. Limits to 12. O(1) performance instead of O(N).
         const latestEpisodesData = await Episode.find()
             .sort({ createdAt: -1 })
             .limit(12)
@@ -88,7 +81,6 @@ router.get('/:id', async (req, res) => {
 
         if (!anime) return res.status(404).render('404');
 
-        // FIXED: Removed invalid '.populate("user")'. Replies and usernames are strings on the document.
         const comments = await Comment.find({ anime: id, parentComment: null })
           .populate('replies')
           .sort({ createdAt: -1 })
@@ -105,7 +97,8 @@ router.get('/:id', async (req, res) => {
             comments,
             session: req.session,
             randomAnimes,
-            guestId: getGuestId(req) // Pass guest ID to frontend
+            // FIXED: Send the persistent visitorId to frontend for comment ownership checks
+            guestId: req.session?.userId || req.visitorId 
         });
 
     } catch (error) {
@@ -127,8 +120,12 @@ router.post('/rate/:id', async (req, res) => {
         const { rating } = req.body; 
         const animeId = req.params.id;
         
-        // Use user session ID if logged in, otherwise use their IP address to prevent spam
-        const voterId = (req.session && req.session.userId) ? req.session.userId : req.ip; 
+        // Future-proof Hybrid Logic (For both Logged-in users & Guests)
+        const voterId = req.session?.userId || req.visitorId;
+
+        if (!voterId) {
+             return res.status(400).json({ success: false, message: 'Could not verify visitor identity.' });
+        }
 
         if (!rating || rating < 2 || rating > 10) {
             return res.status(400).json({ success: false, message: 'Invalid rating value.' });
@@ -207,11 +204,12 @@ router.post('/comment/:animeId', commentLimiter, async (req, res) => {
     }
 
     try {
-        const guestId = getGuestId(req);
+        // FIXED: Use persistent visitorId instead of temporary session ID
+        const activeUserId = req.session?.userId || req.visitorId;
 
         const userCommentCount = await Comment.countDocuments({
             anime: animeId,
-            guestId: guestId,
+            guestId: activeUserId,
             parentComment: null
         });
 
@@ -222,11 +220,11 @@ router.post('/comment/:animeId', commentLimiter, async (req, res) => {
 
         const comment = new Comment({
             anime: animeId,
-            guestId: guestId,
+            guestId: activeUserId,
             username: cleanName,
             guestEmail: cleanEmail,
             content: cleanContent,
-            isAdmin: false
+            isAdmin: !!req.session.isAdminAuthenticated
         });
 
         await comment.save();
@@ -278,16 +276,17 @@ router.post('/comment/reply/:animeId/:commentId', commentLimiter, async (req, re
             return res.redirect(`/anime/${animeId}`);
         }
 
-        const guestId = getGuestId(req);
+        // FIXED: Use persistent visitorId instead of temporary session ID
+        const activeUserId = req.session?.userId || req.visitorId;
 
         const reply = new Comment({
             anime: animeId,
-            guestId: guestId,
+            guestId: activeUserId,
             username: cleanName,
             guestEmail: cleanEmail,
             content: cleanContent,
             parentComment: commentId,
-            isAdmin: false
+            isAdmin: !!req.session.isAdminAuthenticated
         });
 
         const savedReply = await reply.save();
@@ -319,8 +318,9 @@ router.post('/comment/delete/:animeId/:commentId', async (req, res) => {
         if (!comment) return res.redirect(`/anime/${animeId}`);
 
         const isAdmin = !!req.session.isAdminAuthenticated;
-        const guestId = getGuestId(req);
-        const isOwner = comment.guestId === guestId;
+        // FIXED: Check against persistent visitorId
+        const activeUserId = req.session?.userId || req.visitorId;
+        const isOwner = comment.guestId === activeUserId;
 
         if (!isAdmin && !isOwner) {
             req.flash('error', 'You can only delete your own comments.');

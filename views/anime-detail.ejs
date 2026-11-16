@@ -2,7 +2,7 @@
 // ==========================================================================
 // STRICT SORTING FIX: Ensure Seasons & Episodes are always in numerical order
 // ==========================================================================
-if (anime && anime.seasons) {
+if (typeof anime !== 'undefined' && anime && anime.seasons) {
     anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
     anime.seasons.forEach(season => {
         if (season.episodes) {
@@ -280,16 +280,16 @@ if (anime && anime.seasons) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<!-- Data Stores for JS Processing -->
+<!-- Data Stores for JS Processing (FIXED: Added safety fallback for .map loops) -->
 <script id="anime-data" type="application/json">
     <%- JSON.stringify({
-        imageUrl: anime.imageUrl,
-        _id: anime._id,
-        name: anime.name,
-        type: anime.type || 'series',
-        seasons: anime.seasons.map(season => ({
+        imageUrl: anime && anime.imageUrl ? anime.imageUrl : '',
+        _id: anime && anime._id ? anime._id : '',
+        name: anime && anime.name ? anime.name : '',
+        type: anime && anime.type ? anime.type : 'series',
+        seasons: (typeof anime !== 'undefined' && anime.seasons ? anime.seasons : []).map(season => ({
             seasonNumber: season.seasonNumber,
-            episodes: season.episodes.map(episode => ({
+            episodes: (typeof season.episodes !== 'undefined' && season.episodes ? season.episodes : []).map(episode => ({
                 episodeNumber: episode.episodeNumber,
                 title: episode.title,
                 mainServerName: episode.mainServerName || 'Main',
@@ -304,8 +304,8 @@ if (anime && anime.seasons) {
 
 <script id="user-data" type="application/json">
     <%- JSON.stringify({
-        userId: session.userId || session.adminId || null,
-        isLoggedIn: !!(session.userId || session.adminId)
+        userId: (typeof session !== 'undefined' && session) ? (session.userId || session.adminId || null) : null,
+        isLoggedIn: (typeof session !== 'undefined' && session) ? !!(session.userId || session.adminId) : false
     }) %>
 </script>
 
@@ -314,39 +314,46 @@ if (anime && anime.seasons) {
     <!-- Hero Section -->
     <div class="glass-card mb-10 p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
         <div class="relative group flex-shrink-0">
-            <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="w-full md:w-64 rounded-xl shadow-2xl object-cover transition-transform duration-500 hover:scale-105">
+            <img src="<%= typeof anime !== 'undefined' && anime.imageUrl ? anime.imageUrl : '' %>" alt="<%= typeof anime !== 'undefined' && anime.name ? anime.name : 'Unknown' %>" class="w-full md:w-64 rounded-xl shadow-2xl object-cover transition-transform duration-500 hover:scale-105">
         </div>
         <div class="flex-1 space-y-4 min-w-0 text-center md:text-left">
             <h1 class="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-tight break-words">
-                <% const nameParts = anime.name.split(' '); %>
+                <!-- FIXED: Fallback split if name is empty -->
+                <% const nameParts = (typeof anime !== 'undefined' && anime.name ? anime.name : 'Unknown Title').split(' '); %>
                 <span class="text-white"><%= nameParts[0] %></span>
                 <span class="text-yellow-400"><%= nameParts.slice(1).join(' ') %></span>
             </h1>
             <div class="flex flex-wrap justify-center md:justify-start gap-3 text-sm font-bold uppercase tracking-widest text-gray-400">
-                <% if (anime.status) { %>
+                <% if (typeof anime !== 'undefined' && anime.status) { %>
                     <span class="bg-cyan-500/10 text-cyan-400 px-3 py-1.5 rounded-full border border-cyan-500/20 shadow-[0_0_10px_rgba(34,211,238,0.2)]">
                         <i class="fas fa-signal mr-1"></i> <%= anime.status %>
                     </span>
                 <% } %>
-                <span class="bg-white/5 px-3 py-1.5 rounded-full border border-white/5">📅 <%= anime.year || '2024' %></span>
+
+                <% if (typeof anime !== 'undefined' && anime.languageFormat && anime.languageFormat.trim() !== '') { %>
+                    <span class="bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                        <i class="fas fa-language mr-1"></i> <%= anime.languageFormat %>
+                    </span>
+                <% } %>
+                <span class="bg-white/5 px-3 py-1.5 rounded-full border border-white/5">📅 <%= typeof anime !== 'undefined' && anime.year ? anime.year : '2024' %></span>
                 <span class="bg-blue-500/10 text-blue-400 px-3 py-1.5 rounded-full border border-blue-500/20">HD Dual Audio</span>
-                <% if(anime.type === 'movie') { %>
+                <% if(typeof anime !== 'undefined' && anime.type === 'movie') { %>
                     <span class="bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20">🎬 Movie</span>
                 <% } else { %>
                     <span class="bg-purple-500/10 text-purple-400 px-3 py-1.5 rounded-full border border-purple-500/20">📺 Series</span>
                 <% } %>
             </div>
             <p class="text-gray-400 leading-relaxed font-medium text-sm md:text-base md:border-l-2 border-blue-500 md:pl-4 break-words">
-                <%= anime.description %>
+                <%= typeof anime !== 'undefined' && anime.description ? anime.description : '' %>
             </p>
         </div>
     </div>
 
     <!-- Rating System -->
     <% 
-       let displayScore = anime.ratingScore ? anime.ratingScore.toFixed(1) : "0.0";
-       let displayCount = anime.ratingCount ? anime.ratingCount : 0;
-       let percentage = anime.ratingScore ? Math.round((anime.ratingScore / 10) * 100) : 0;
+       let displayScore = typeof anime !== 'undefined' && anime.ratingScore ? anime.ratingScore.toFixed(1) : "0.0";
+       let displayCount = typeof anime !== 'undefined' && anime.ratingCount ? anime.ratingCount : 0;
+       let percentage = typeof anime !== 'undefined' && anime.ratingScore ? Math.round((anime.ratingScore / 10) * 100) : 0;
     %>
     <div class="rating-box my-6 p-5 rounded-2xl bg-black/40 border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 w-full">
         <div class="flex items-center gap-5 w-full md:w-auto justify-center md:justify-start">
@@ -438,7 +445,7 @@ if (anime && anime.seasons) {
     </div>
 
     <!-- Special Info Announcement -->
-    <% if(anime.specialInfo && anime.specialInfo.trim() !== '') { %>
+    <% if(typeof anime !== 'undefined' && anime.specialInfo && anime.specialInfo.trim() !== '') { %>
     <div class="glass-card p-4 md:p-6 mb-8 border border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/5">
         <div class="flex flex-col items-center text-center gap-3">
             <svg class="w-8 h-8 text-yellow-500 mx-auto" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
@@ -451,7 +458,7 @@ if (anime && anime.seasons) {
     <% } %>
 
     <!-- Episodes / Movie Play Area -->
-    <% if(anime.type === 'movie') { %>
+    <% if(typeof anime !== 'undefined' && anime.type === 'movie') { %>
         <div class="text-center mb-12">
             <% if(anime.seasons && anime.seasons[0] && anime.seasons[0].episodes && anime.seasons[0].episodes.length > 0) { %>
                 <button class="play-movie-btn" data-anime-id="<%= anime._id %>" data-anime-name="<%= anime.name %>" data-anime-img="<%= anime.imageUrl %>">
@@ -479,8 +486,9 @@ if (anime && anime.seasons) {
                 </button>
 
                 <!-- Scrollable Container -->
+                <!-- FIXED: Wrapped with fallback for empty seasons -->
                 <div class="flex-1 overflow-x-auto hide-scrollbar flex items-center gap-2 py-2 scroll-smooth" id="season-tabs-container">
-                    <% anime.seasons.forEach((season, index) => { %>
+                    <% (typeof anime !== 'undefined' && anime.seasons ? anime.seasons : []).forEach((season, index) => { %>
                         <button class="season-tab-btn whitespace-nowrap px-6 py-3 rounded-lg font-black text-xs uppercase tracking-widest transition-all duration-300 
                             <%= index === anime.seasons.length - 1 ? 'bg-gradient-to-br from-[#1c1836] to-[#120f26] text-white border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]' : 'bg-transparent text-gray-400 hover:text-white border border-white/5 hover:border-white/20' %>" 
                             data-target="<%= index %>">
@@ -499,19 +507,21 @@ if (anime && anime.seasons) {
         </div>
 
         <div id="episodes-container">
-            <% anime.seasons.forEach((season, seasonIndex) => { %>
+            <!-- FIXED: Wrapped with fallback for empty seasons -->
+            <% (typeof anime !== 'undefined' && anime.seasons ? anime.seasons : []).forEach((season, seasonIndex) => { %>
                 <div class="season-section <%= seasonIndex === anime.seasons.length - 1 ? '' : 'hidden' %>" data-season="<%= seasonIndex %>">
                     
                     <!-- EPISODE GRID -->
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4" id="grid-season-<%= seasonIndex %>">
-                        <% season.episodes.forEach((episode, epIndex) => { %>
+                        <!-- FIXED: Wrapped with fallback for empty episodes -->
+                        <% (typeof season !== 'undefined' && season.episodes ? season.episodes : []).forEach((episode, epIndex) => { %>
                             <div class="episode-card cursor-pointer group <%= epIndex >= 24 ? 'hidden hidden-ep' : '' %>" 
-                                 data-season-index="<%= seasonIndex %>" 
-                                 data-episode-index="<%= epIndex %>" 
-                                 data-season-number="<%= season.seasonNumber %>" 
-                                 data-anime-id="<%= anime._id %>" 
-                                 data-anime-name="<%= anime.name %>" 
-                                 data-anime-img="<%= anime.imageUrl %>">
+                                   data-season-index="<%= seasonIndex %>" 
+                                   data-episode-index="<%= epIndex %>" 
+                                   data-season-number="<%= season.seasonNumber %>" 
+                                   data-anime-id="<%= anime._id %>" 
+                                   data-anime-name="<%= anime.name %>" 
+                                   data-anime-img="<%= anime.imageUrl %>">
                                 
                                 <div class="ep-image-container relative aspect-video">
                                     <img src="<%= episode.imageUrl || anime.imageUrl %>" loading="lazy">
@@ -533,10 +543,10 @@ if (anime && anime.seasons) {
                     </div>
 
                     <!-- LOAD MORE BUTTON -->
-                    <% if (season.episodes.length > 24) { %>
+                    <% if ((typeof season !== 'undefined' && season.episodes ? season.episodes : []).length > 24) { %>
                         <div class="text-center mt-10 pb-4">
                             <button class="load-more-btn bg-white/5 border border-white/10 text-cyan-400 hover:text-white hover:bg-cyan-600 hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] px-8 py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300" data-season="<%= seasonIndex %>">
-                                Load More Episodes (<%= season.episodes.length - 24 %> Remaining)
+                                Load More Episodes (<%= (season.episodes || []).length - 24 %> Remaining)
                             </button>
                         </div>
                     <% } %>
@@ -553,7 +563,7 @@ if (anime && anime.seasons) {
         </h2>
         <%- include('partials/flash') %>
         
-        <form action="/anime/comment/<%= anime._id %>" method="POST" class="mb-8 md:mb-12">
+        <form action="/anime/comment/<%= typeof anime !== 'undefined' ? anime._id : '' %>" method="POST" class="mb-8 md:mb-12">
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Comment * <span class="text-red-500">Required</span></label>
@@ -579,7 +589,7 @@ if (anime && anime.seasons) {
         function renderThreadedComments(commentList, depth = 0) {
             commentList.forEach(function(comment) {
                 const isOwner = comment.guestId && comment.guestId === currentGuestId;
-                const isAdmin = !!session.isAdminAuthenticated;
+                const isAdmin = (typeof session !== 'undefined' && !!session.isAdminAuthenticated);
                 const isReply = depth > 0;
         %>
             <div class="<%= isReply ? 'reply-container' : '' %>">
@@ -604,14 +614,14 @@ if (anime && anime.seasons) {
                         <div class="flex items-center gap-2 flex-shrink-0">
                             <button type="button" data-action="reply" data-comment-id="<%= comment._id %>" class="action-btn reply-trigger"><i class="fas fa-reply"></i> Reply</button>
                             <% if (isAdmin || isOwner) { %>
-                                <button type="button" data-action="delete-comment" data-anime-id="<%= anime._id %>" data-comment-id="<%= comment._id %>" class="action-btn delete-trigger"><i class="fas fa-trash-alt"></i></button>
+                                <button type="button" data-action="delete-comment" data-anime-id="<%= typeof anime !== 'undefined' ? anime._id : '' %>" data-comment-id="<%= comment._id %>" class="action-btn delete-trigger"><i class="fas fa-trash-alt"></i></button>
                             <% } %>
                         </div>
                     </div>
                     <p class="text-sm text-gray-300 leading-relaxed break-words"><%= comment.content %></p>
 
                     <div id="reply-form-<%= comment._id %>" class="hidden mt-4">
-                        <form action="/anime/comment/reply/<%= anime._id %>/<%= comment._id %>" method="POST" class="bg-black/20 p-4 rounded-xl border border-white/5">
+                        <form action="/anime/comment/reply/<%= typeof anime !== 'undefined' ? anime._id : '' %>/<%= comment._id %>" method="POST" class="bg-black/20 p-4 rounded-xl border border-white/5">
                             <textarea name="content" rows="2" class="w-full p-3 rounded-xl bg-black/60 border border-blue-500/30 text-white focus:border-blue-500 outline-none text-sm mb-3" placeholder="Write a reply..." required maxlength="500"></textarea>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                 <input type="text" name="guestName" class="w-full p-3 rounded-xl bg-black/60 border border-blue-500/30 text-white focus:border-blue-500 outline-none text-sm" placeholder="Your name *" required maxlength="50">
@@ -628,7 +638,7 @@ if (anime && anime.seasons) {
             </div>
         <% }); } %>
         
-        <% if (comments && comments.length > 0) { renderThreadedComments(comments); } else { %>
+        <% if (typeof comments !== 'undefined' && comments && comments.length > 0) { renderThreadedComments(comments); } else { %>
             <div class="text-center py-12 bg-black/20 rounded-2xl border border-white/5">
                 <i class="fas fa-comment-slash text-4xl text-gray-600 mb-4 block"></i>
                 <p class="text-gray-500 font-bold uppercase text-xs tracking-widest">No conversation yet. Be the first to speak!</p>
@@ -661,7 +671,8 @@ if (anime && anime.seasons) {
     <div class="mt-12">
         <h2 class="text-2xl font-black mb-6 uppercase tracking-tighter">Random<span class="text-blue-500">Titles</span></h2>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
-            <% (randomAnimes || []).forEach(function(r) { %>
+            <!-- FIXED: Fallback check for randomAnimes -->
+            <% (typeof randomAnimes !== 'undefined' && randomAnimes ? randomAnimes : []).forEach(function(r) { %>
                 <div class="group bg-gray-800/50 rounded-xl p-2 hover:bg-gray-700/70 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/20">
                     <a href="/anime/<%= r._id %>">
                         <div class="relative overflow-hidden rounded-lg mb-2">
@@ -726,8 +737,8 @@ if (anime && anime.seasons) {
     
     // Flatten episodes for easy navigation
     const allEpisodes = [];
-    animeData.seasons.forEach((season, sIdx) => {
-        season.episodes.forEach((episode, eIdx) => {
+    (animeData.seasons || []).forEach((season, sIdx) => {
+        (season.episodes || []).forEach((episode, eIdx) => {
             allEpisodes.push({
                 seasonIndex: sIdx, episodeIndex: eIdx,
                 seasonNumber: season.seasonNumber, episodeNumber: episode.episodeNumber,
@@ -1019,6 +1030,13 @@ if (anime && anime.seasons) {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ rating: parseInt(btn.dataset.value) })
                 });
+                
+                // ADDED: Rate Limit Error Catch 
+                if (response.status === 429) {
+                    Swal.fire({ icon: 'warning', title: 'Slow Down!', text: 'You are submitting ratings too quickly. Please wait a moment.', background: '#0b0e11', color: '#fff' });
+                    return;
+                }
+
                 const data = await response.json();
                 if (data.success) {
                     document.getElementById('average-score').textContent = data.newAverage.toFixed(1);
@@ -1129,6 +1147,13 @@ if (anime && anime.seasons) {
         
         try {
             const res = await fetch('/report-video', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg }) });
+            
+            // ADDED: Rate Limit Error Catch
+            if (res.status === 429) {
+                Swal.fire({ icon: 'warning', title: 'Too Many Requests', text: 'You have submitted too many reports recently. Please try again later.', background: '#0b0e11', color: '#fff' });
+                return;
+            }
+
             const data = await res.json();
             if(data.success) {
                 Swal.fire({icon: 'success', title: 'Sent!', timer: 2000});

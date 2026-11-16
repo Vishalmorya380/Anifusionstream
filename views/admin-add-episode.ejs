@@ -2,7 +2,7 @@
 // ==========================================================================
 // STRICT SORTING FIX: Ensure Seasons & Episodes are always in numerical order
 // ==========================================================================
-if (anime && anime.seasons) {
+if (typeof anime !== 'undefined' && anime && anime.seasons) {
     anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
     anime.seasons.forEach(season => {
         if (season.episodes) {
@@ -266,7 +266,7 @@ if (anime && anime.seasons) {
 
 <div class="admin-wrapper">
     <div class="text-center mb-10">
-        <a href="/admin/dashboard" class="back-link">
+        <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="back-link">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Return to Dashboard
         </a>
@@ -277,20 +277,20 @@ if (anime && anime.seasons) {
     </div>
 
     <div class="ui-card">
-        <% if (messages && messages.error && messages.error.length > 0) { %>
+        <% if (typeof messages !== 'undefined' && messages.error && messages.error.length > 0) { %>
             <div class="flash-alert flash-error">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <%= messages.error %>
             </div>
         <% } %>
-        <% if (messages && messages.success && messages.success.length > 0) { %>
+        <% if (typeof messages !== 'undefined' && messages.success && messages.success.length > 0) { %>
             <div class="flash-alert flash-success">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <%= messages.success %>
             </div>
         <% } %>
 
-        <form action="/admin/add-episode/<%= anime._id %>" method="POST" id="episodeForm">
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/add-episode/<%= anime._id %>" method="POST" id="episodeForm">
 
             <% if(anime.type === 'movie') { %>
             <div class="movie-notice">

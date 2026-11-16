@@ -34,31 +34,37 @@ app.use(helmet({
 }));
 
 // ==========================================
-// GLOBAL RATE LIMITER - FIXED
+// NEW: ANONYMOUS VISITOR ID & LAYER 1 LIMITER
 // ==========================================
+const cookieParser = require('cookie-parser');
+const anonymousVisitor = require('./middleware/anonymousVisitor');
+const { checkPenaltyBox, visitorCounter } = require('./middleware/visitorRateLimit');
+
+app.use(cookieParser());
+app.use(anonymousVisitor); // Assigns req.visitorId
+app.use(checkPenaltyBox);  // Checks MongoDB penalty box
+app.use(visitorCounter);   // Counts requests per browser (100/min)
+
+// ==========================================
+// LAYER 2: GLOBAL IP RATE LIMITER (Fallback)
+// ==========================================
+// THE FIX: Define adminPath right here before the limiter uses it
+const adminPath = process.env.ADMIN_PATH || '/admin';
+
 const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500, // 500 requests per 15min
-    message: 'Too many requests from this IP, please try again later.',
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    message: 'We detected an unusually high volume of traffic from your network. To keep the server fast and safe for everyone, your access has been temporarily paused. Please try again in 15 minutes.',
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Skip static files: CSS, JS, images, fonts, audio
+        // 1. Skip admin routes so the owner is never blocked from the dashboard
+        if (req.path.startsWith(adminPath)) return true; // NEW SECURE PATH
+  
+        // 2. Skip static files
         return req.path.startsWith('/public') || 
                req.path.startsWith('/uploads') ||
-               req.path.endsWith('.css') || 
-               req.path.endsWith('.js') || 
-               req.path.endsWith('.png') || 
-               req.path.endsWith('.jpg') || 
-               req.path.endsWith('.jpeg') ||
-               req.path.endsWith('.gif') ||
-               req.path.endsWith('.svg') ||
-               req.path.endsWith('.ico') ||
-               req.path.endsWith('.ogg') ||
-               req.path.endsWith('.mp3') ||
-               req.path.endsWith('.woff') ||
-               req.path.endsWith('.woff2') ||
-               req.path.endsWith('.ttf');
+               req.path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|ogg|mp3|woff|woff2|ttf)$/);
     }
 });
 app.use(globalLimiter);
@@ -125,9 +131,11 @@ app.use((req, res, next) => {
     res.locals.adminUsername = req.session.adminUsername || null;
     res.locals.username = req.session.username || null;
     
-    // Add this line for Canonical URLs
-    res.locals.currentPath = req.originalUrl.split('?')[0]; 
+    // Canonical URLs
+    res.locals.currentPath = req.originalUrl.split('?')[0];
     
+    // Dynamic Admin Path for frontend EJS buttons
+    res.locals.adminPath = process.env.ADMIN_PATH || '/admin';    
     next();
 });
 
@@ -135,7 +143,7 @@ app.use((req, res, next) => {
 // 7. ROUTES
 // ==========================================
 app.use('/', require('./routes/index'));
-app.use('/admin', require('./routes/admin'));
+app.use(process.env.ADMIN_PATH || '/admin', require('./routes/admin'));
 app.use('/user', require('./routes/user'));
 app.use('/anime', require('./routes/anime'));
 app.use('/', require('./routes/pages'));

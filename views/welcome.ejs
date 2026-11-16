@@ -5,7 +5,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 
 <style>
-
   /* STRICT MOBILE LOCK TO PREVENT SHAKING */
   html, body { 
     background-color: #05070a; 
@@ -217,20 +216,20 @@
     .share-btn { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
   }
 </style>
-</style>
 
 <!-- Background Elements -->
 <div class="bg-hero-logo"></div>
 <div class="bg-dark-overlay"></div>
 <div class="jp-watermark">アニメ</div>
 
-<div class="relative z-10 min-h-screen px-4 py-12 flex flex-col justify-center w-full overflow-hidden mt-10">
+<main class="relative z-10 min-h-screen px-4 py-12 flex flex-col justify-center w-full overflow-hidden mt-10">
   <div class="container mx-auto max-w-6xl relative z-10">
 
     <!-- HERO SECTION -->
-    <div class="text-center mb-20 relative">
+    <header class="text-center mb-20 relative">
       <div class="logo-wrap">
-        <img src="/images/logo.png" alt="AniFusionStream Logo">
+        <!-- SEO Optimized Alt Text -->
+        <img src="/images/logo.png" alt="AniFusionStream - Watch Free HD Anime Online">
       </div>
 
       <p class="text-[10px] md:text-xs text-cyan-400 font-black tracking-[6px] uppercase mb-4 drop-shadow-md">Welcome to the Nexus of</p>
@@ -239,12 +238,12 @@
         Your Personal Anime Note. Track your journey, discover hidden gems, and discuss every epic moment.
       </p>
       <a href="/home" class="btn-glow inline-flex items-center gap-3 px-10 py-4 md:px-12 md:py-5 text-sm font-black uppercase text-white tracking-widest relative z-20">
-        Enter The Stream <i class="fa-solid fa-bolt text-yellow-400 animate-pulse"></i>
+        Enter Anifusionstream <i class="fa-solid fa-bolt text-yellow-400 animate-pulse"></i>
       </a>
-    </div>
+    </header>
 
     <!-- CATCHY INTRO -->
-    <div class="section-glow text-center">
+    <section class="section-glow text-center mb-10">
       <h2 class="text-3xl md:text-4xl font-black mb-4 brand-text break-words">Thousands of Titles, All for Free!</h2>
       <h3 class="text-sm md:text-lg font-bold text-gray-300 mb-6 tracking-widest uppercase">
         Unlike Your Crush, We Truly Care <i class="fa-solid fa-heart-crack text-red-500 mx-1"></i><i class="fa-solid fa-arrow-right mx-1 text-gray-600"></i><i class="fa-solid fa-heart text-pink-500 mx-1"></i>
@@ -252,10 +251,15 @@
       <p class="text-gray-400 leading-relaxed text-sm md:text-base max-w-3xl mx-auto font-medium">
         Just as <span class="text-cyan-400 font-bold">Inuyasha</span> protects Kagome, we're here to shield you from the woes of poor anime streaming experiences and deliver the ultimate nexus of entertainment.
       </p>
-    </div>
+    </section>
+
+    <!-- ANIMATION CAROUSEL MOVED HERE SO IT DOESN'T OVERLAP HERO TEXT -->
+    <section class="mb-16">
+       <%- include('animation') %>
+    </section>
 
     <!-- FEATURES GRID -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
       <div class="feature-card">
         <div class="feature-icon"><i class="fa-solid fa-book-journal-whills"></i></div>
         <h4 class="text-sm md:text-base font-black text-white mb-2 uppercase tracking-wide">Elite Library</h4>
@@ -312,10 +316,10 @@
           Adaptable like heroes in <span class="text-cyan-400 font-bold">My Hero Academia</span>. Stream seamlessly on desktop, tablet, or mobile.
         </p>
       </div>
-    </div>
+    </section>
 
     <!-- COMPARISON SECTION -->
-    <div class="section-glow">
+    <section class="section-glow">
       <h2 class="text-xl md:text-2xl font-black text-center mb-6 uppercase tracking-widest text-white">
         <i class="fa-solid fa-crown text-yellow-500 mr-2"></i> How We Compare
       </h2>
@@ -325,10 +329,10 @@
       <p class="text-gray-400 leading-relaxed text-center max-w-4xl mx-auto text-sm md:text-base font-medium">
         With our ad-free video player, Hindi/Tamil regional dubs, and lightning-fast UI, we are confident that once you embark on this journey, you'll never want to set sail with another crew! Let's get started.
       </p>
-    </div>
+    </section>
 
     <!-- TRENDING SECTION -->
-    <div class="section-glow">
+    <section class="section-glow">
       <h2 class="text-lg md:text-xl font-black text-center mb-8 uppercase tracking-widest text-gray-300">
         <i class="fa-solid fa-fire text-orange-500 mr-2 drop-shadow-[0_0_10px_rgba(249,115,22,0.8)] animate-pulse"></i> Trending This Season
       </h2>
@@ -343,10 +347,10 @@
           </div>
         <% }) %>
       </div>
-    </div>
+    </section>
 
-    <!-- SHARE SECTION (With Mobile Fix) -->
-    <div class="share-box mt-12">
+    <!-- SHARE SECTION -->
+    <section class="share-box mt-12">
       <h3 class="share-title text-xl md:text-2xl font-black mb-2 flex items-center justify-center gap-3">
         <i class="fa-solid fa-share-nodes"></i> Invite Your Nakama
       </h3>
@@ -358,17 +362,18 @@
           <p class="text-[10px] md:text-xs text-gray-400 uppercase tracking-widest mt-2 font-bold">Otakus Joined</p>
         </div>
         <div class="flex flex-wrap items-center justify-center gap-3 md:gap-5">
-          <button class="share-btn btn-tg" data-platform="telegram" title="Share on Telegram"><i class="fa-brands fa-telegram"></i></button>
-          <button class="share-btn btn-wa" data-platform="whatsapp" title="Share on WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
-          <button class="share-btn btn-x" data-platform="twitter" title="Share on X / Twitter"><i class="fa-brands fa-x-twitter"></i></button>
-          <button class="share-btn btn-rd" data-platform="reddit" title="Share on Reddit"><i class="fa-brands fa-reddit-alien"></i></button>
-          <button class="share-btn btn-share" data-platform="native" title="More Options"><i class="fa-solid fa-link"></i></button>
+          <!-- Added aria-labels for SEO/Accessibility -->
+          <button class="share-btn btn-tg" data-platform="telegram" title="Share on Telegram" aria-label="Share on Telegram"><i class="fa-brands fa-telegram"></i></button>
+          <button class="share-btn btn-wa" data-platform="whatsapp" title="Share on WhatsApp" aria-label="Share on WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+          <button class="share-btn btn-x" data-platform="twitter" title="Share on X / Twitter" aria-label="Share on X"><i class="fa-brands fa-x-twitter"></i></button>
+          <button class="share-btn btn-rd" data-platform="reddit" title="Share on Reddit" aria-label="Share on Reddit"><i class="fa-brands fa-reddit-alien"></i></button>
+          <button class="share-btn btn-share" data-platform="native" title="More Options" aria-label="More sharing options"><i class="fa-solid fa-link"></i></button>
         </div>
       </div>
-    </div>
+    </section>
 
   </div>
-</div>
+</main>
 
 <script>
   const shareUrl = window.location.origin + '/'; 

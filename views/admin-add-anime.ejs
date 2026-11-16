@@ -211,7 +211,7 @@
 <div class="admin-wrapper">
 
     <div class="text-center mb-10">
-        <a href="/admin/dashboard" class="back-link">
+        <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="back-link">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Back to Dashboard
         </a>
@@ -223,7 +223,7 @@
     <div class="ui-card">
         <%- include('partials/flash') %>
 
-        <form action="/admin/add-anime" method="POST" id="addAnimeForm">
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/add-anime" method="POST" id="addAnimeForm">
 
             <div class="mb-8">
                 <label class="ui-label">Content Type</label>
@@ -253,6 +253,11 @@
                 <input type="url" name="imageUrl" class="ui-input" placeholder="https://image-link.com/poster.jpg" required maxlength="500">
             </div>
 
+           <div class="mb-8">
+                <label class="ui-label">Language / Format <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                <input type="text" name="languageFormat" class="ui-input" placeholder="e.g. Sub | Dub | English" maxlength="50">
+            </div>
+
             <div class="mb-8">
                 <label class="ui-label">Description</label>
                 <textarea name="description" rows="4" class="ui-input" placeholder="Write a brief synopsis..." required maxlength="2000"></textarea>
@@ -261,7 +266,7 @@
             <div class="mb-10">
                 <label class="ui-label">Select Genres (At least 1 required)</label>
                 <div class="genre-grid">
-                    <% if (genres && genres.length > 0) { %>
+                    <% if (typeof genres !== 'undefined' && genres && genres.length > 0) { %>
                         <% genres.forEach(genre => { %>
                             <label class="genre-item">
                                 <input type="checkbox" name="genres" value="<%= genre._id %>">

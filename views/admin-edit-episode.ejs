@@ -89,6 +89,12 @@
         filter: brightness(1.1);
         box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);
     }
+    
+    .ui-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
 
     .back-link {
         color: var(--text-muted);
@@ -221,12 +227,12 @@
 <div class="admin-wrapper">
 
     <div class="text-center mb-10">
-        <a href="/admin/dashboard" class="back-link">
+        <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="back-link">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             Discard Changes
         </a>
         <h1 class="text-4xl md:text-5xl font-black tracking-tighter uppercase">
-            Edit <span class="text-blue-500"><%= anime && anime.type === 'movie' ? 'Movie' : 'Episode' %></span>
+            Edit <span class="text-blue-500"><%= typeof anime !== 'undefined' && anime && anime.type === 'movie' ? 'Movie' : 'Episode' %></span>
         </h1>
         <p class="text-gray-500 mt-2 font-medium">
             <% if (typeof anime !== 'undefined' && anime.type === 'movie') { %>
@@ -242,11 +248,11 @@
     <div class="ui-card">
         <%- include('partials/flash') %>
 
-        <div id="servers-data" data-servers='<%- JSON.stringify(episode && episode.servers ? episode.servers : []) %>'></div>
+        <div id="servers-data" data-servers='<%- JSON.stringify(typeof episode !== 'undefined' && episode && episode.servers ? episode.servers : []) %>'></div>
 
-        <form action="/admin/edit-episode/<%= episode._id %>" method="POST" id="editEpisodeForm">
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/edit-episode/<%= episode._id %>" method="POST" id="editEpisodeForm">
 
-            <% if(anime && anime.type === 'movie') { %>
+            <% if(typeof anime !== 'undefined' && anime && anime.type === 'movie') { %>
             <div class="movie-notice">
                 <div class="movie-notice-icon">🎬</div>
                 <div class="movie-notice-text">
@@ -272,7 +278,7 @@
             <% } %>
 
             <div class="mb-8">
-                <label class="ui-label"><%= anime && anime.type === 'movie' ? 'Movie Title' : 'Episode Title' %></label>
+                <label class="ui-label"><%= typeof anime !== 'undefined' && anime && anime.type === 'movie' ? 'Movie Title' : 'Episode Title' %></label>
                 <input type="text" name="title" value="<%= episode.title %>" class="ui-input" required maxlength="200">
             </div>
 

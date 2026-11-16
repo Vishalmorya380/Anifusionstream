@@ -9,6 +9,7 @@ const animeSchema = new mongoose.Schema({
     index: true 
   },
   imageUrl: { type: String, maxlength: 500 },
+  languageFormat: { type: String, trim: true, default: '', maxlength: 50 },
   description: { type: String, maxlength: 5000 },
   specialInfo: { type: String, default: '', maxlength: 500 },
   genres: [{ 

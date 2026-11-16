@@ -4,13 +4,14 @@ const Contact = require('../models/Contact');
 const rateLimit = require('express-rate-limit');
 const sanitizeHtml = require('sanitize-html'); // npm i sanitize-html express-rate-limit
 
-// Rate limiter: 3 messages per hour per IP
+// Rate limiter: 3 messages per hour per visitor
 const contactLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 3,
     message: 'Too many contact requests. Please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
+    keyGenerator: (req) => req.visitorId 
 });
 
 // Helper: Sanitize text - strip all HTML
@@ -96,7 +97,8 @@ router.post('/contact-us', contactLimiter, async (req, res) => {
             email,
             subject,
             message,
-            ip: req.ip // Track IP for spam detection
+            // FIXED: Replaced raw IP with anonymous visitor ID for privacy-first spam tracking
+            ip: req.visitorId 
         });
 
         req.flash('success', 'Transmission Received. Our team will analyze your report.');
@@ -123,7 +125,8 @@ router.post('/report-video', contactLimiter, async (req, res) => {
             email: 'noreply@anifusion.com', 
             subject: 'Video Report', 
             message, 
-            ip: req.ip 
+            // FIXED: Replaced raw IP with anonymous visitor ID
+            ip: req.visitorId 
         });
 
         return res.json({ success: true, message: 'Report Submitted Successfully. Admin will check it soon.' });

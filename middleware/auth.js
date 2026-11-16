@@ -1,6 +1,9 @@
 const Admin = require('../models/Admin');
 const User = require('../models/User');
 
+// DEFINE DYNAMIC ADMIN PATH FOR REDIRECTS
+const adminBase = process.env.ADMIN_PATH || '/admin';
+
 /**
  * Cache for verified sessions to reduce DB hits
  * Key: sessionId, Value: { userId, isAdmin, verifiedAt }
@@ -19,7 +22,8 @@ const clearSessionAndRedirect = (req, res, redirectPath) => {
         const sessionId = req.session.id;
         sessionCache.delete(sessionId);
         return req.session.destroy(() => {
-            res.clearCookie('connect.sid', { path: '/' });
+            // FIXED: Clears custom cookie name 'anifusion.sid' instead of 'connect.sid'
+            res.clearCookie('anifusion.sid', { path: '/' });
             res.redirect(redirectPath);
         });
     }
@@ -56,7 +60,7 @@ const ensureAuthenticatedUser = async (req, res, next) => {
                 return next();
             } else {
                 // Admin deleted from DB, destroy session
-                return clearSessionAndRedirect(req, res, '/admin/login');
+                return clearSessionAndRedirect(req, res, `${adminBase}/login`);
             }
         }
 
@@ -123,13 +127,13 @@ const ensureAuthenticatedAdmin = async (req, res, next) => {
                 return next();
             } else {
                 // Admin was deleted from DB
-                return clearSessionAndRedirect(req, res, '/admin/login');
+                return clearSessionAndRedirect(req, res, `${adminBase}/login`);
             }
         }
 
         // 3. Fail: Admin session not found
         req.flash('error', 'Admin access required. Please login.');
-        return res.redirect('/admin/login');
+        return res.redirect(`${adminBase}/login`);
 
     } catch (err) {
         console.error("Admin Auth Error:", err);

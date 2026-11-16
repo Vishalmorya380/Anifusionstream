@@ -89,10 +89,10 @@
                 </p>
             </div>
             <div class="flex flex-wrap items-center justify-center gap-4">
-                <a href="/admin/add-anime" class="premium-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[11px] shadow-lg shadow-blue-600/20">Create Anime</a>
-                <a href="/admin/manage-categories" class="premium-btn bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl text-[11px] hover:bg-white/10">Categories</a>
+                <a href="<%= adminPath %>/add-anime" class="premium-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[11px] shadow-lg shadow-blue-600/20">Create Anime</a>
+                <a href="<%= adminPath %>/manage-categories" class="premium-btn bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl text-[11px] hover:bg-white/10">Categories</a>
 
-                <form action="/admin/logout" method="POST" class="inline">
+                <form action="<%= adminPath %>/logout" method="POST" class="inline">
                     <button type="submit" class="premium-btn bg-red-600/10 text-red-500 border border-red-600/30 px-6 py-3 rounded-2xl text-[11px] hover:bg-red-600 hover:text-white transition-all">
                         Terminate Session
                     </button>
@@ -147,7 +147,7 @@
             </div>
 
             <!-- SEARCH AND FILTER FORM -->
-            <form method="GET" action="/admin/dashboard" id="mainSearchForm" class="mb-10 flex flex-col md:flex-row gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 shadow-lg relative">
+            <form method="GET" action="<%= adminPath %>/dashboard" id="mainSearchForm" class="mb-10 flex flex-col md:flex-row gap-4 bg-white/5 p-4 rounded-2xl border border-white/10 shadow-lg relative">
                 
                 <!-- Search Input with Suggestions -->
                 <div class="flex-1 relative">
@@ -188,7 +188,7 @@
                 </button>
                 
                 <% if(searchQuery || currentFilter !== 'all') { %>
-                    <a href="/admin/dashboard" class="flex items-center justify-center bg-red-600/10 border border-red-500/20 text-red-500 hover:bg-red-600 hover:text-white font-black uppercase tracking-wider text-xs py-3.5 px-6 rounded-xl transition-all">
+                    <a href="<%= adminPath %>/dashboard" class="flex items-center justify-center bg-red-600/10 border border-red-500/20 text-red-500 hover:bg-red-600 hover:text-white font-black uppercase tracking-wider text-xs py-3.5 px-6 rounded-xl transition-all">
                         Clear
                     </a>
                 <% } %>
@@ -224,8 +224,8 @@
                                     <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 max-w-4xl mb-8"><%= anime.description %></p>
 
                                     <div class="flex flex-wrap justify-center md:justify-start gap-4">
-                                        <a href="/admin/edit-anime/<%= anime._id %>" class="premium-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[11px] shadow-lg shadow-blue-600/20">Edit Metadata</a>
-                                        <a href="/admin/add-episode/<%= anime._id %>" class="premium-btn bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl text-[11px] hover:bg-white/10">Add Episode</a>
+                                        <a href="<%= adminPath %>/edit-anime/<%= anime._id %>" class="premium-btn bg-blue-600 text-white px-6 py-3 rounded-2xl text-[11px] shadow-lg shadow-blue-600/20">Edit Metadata</a>
+                                        <a href="<%= adminPath %>/add-episode/<%= anime._id %>" class="premium-btn bg-white/5 border border-white/10 text-white px-6 py-3 rounded-2xl text-[11px] hover:bg-white/10">Add Episode</a>
                                         <button type="button"
                                                 data-action="delete-anime"
                                                 data-anime-id="<%= anime._id %>"
@@ -271,7 +271,7 @@
                                                                 </div>
 
                                                                 <div class="flex gap-2">
-                                                                    <a href="/admin/edit-episode/<%= episode._id %>"
+                                                                    <a href="<%= adminPath %>/edit-episode/<%= episode._id %>"
                                                                        class="bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white p-2.5 rounded-lg transition-all border border-blue-500/30 hover:border-blue-500 hover:scale-110"
                                                                        title="Edit Media">
                                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -481,6 +481,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    const currentAdminPath = "<%= adminPath %>"; // Store dynamic path for JS functions
+
     function deleteEpisode(episodeId, episodeNum) {
         Swal.fire({
             title: 'Delete Media?',
@@ -497,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
-                submitForm(`/admin/delete-episode/${episodeId}`);
+                submitForm(`${currentAdminPath}/delete-episode/${episodeId}`);
             }
         });
     }
@@ -518,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
-                submitForm(`/admin/delete-season/${animeId}/${seasonId}`);
+                submitForm(`${currentAdminPath}/delete-season/${animeId}/${seasonId}`);
             }
         });
     }
@@ -539,7 +541,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
-                submitForm(`/admin/delete-anime/${animeId}`);
+                submitForm(`${currentAdminPath}/delete-anime/${animeId}`);
             }
         });
     }
@@ -560,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 showLoading();
-                submitForm(`/admin/delete-message/${messageId}`);
+                submitForm(`${currentAdminPath}/delete-message/${messageId}`);
             }
         });
     }

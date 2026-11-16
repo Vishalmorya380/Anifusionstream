@@ -321,14 +321,14 @@
     <div class="system-card">
         <div class="system-badge anime-font">Comms Link</div>
         
-        <!-- Flash Messages -->
-        <% if (messages.error) { %>
+        <!-- FIXED: Safely check for messages object existence -->
+        <% if (typeof messages !== 'undefined' && messages.error) { %>
             <div class="system-alert alert-error anime-font">
                 <i class="fas fa-exclamation-triangle mr-2 text-red-500"></i>
                 <%= messages.error %>
             </div>
         <% } %>
-        <% if (messages.success) { %>
+        <% if (typeof messages !== 'undefined' && messages.success) { %>
             <div class="system-alert alert-success anime-font">
                 <i class="fas fa-check-circle mr-2 text-cyan-400"></i>
                 <%= messages.success %>

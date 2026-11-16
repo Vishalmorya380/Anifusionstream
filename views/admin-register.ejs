@@ -147,7 +147,7 @@
 
         <%- include('partials/flash') %>
 
-        <form action="/admin/register" method="POST">
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/register" method="POST">
             <div class="mb-4">
                 <label class="ui-label">Administrator ID</label>
                 <input type="text" name="username" class="ui-input" placeholder="Username" required autocomplete="username">
@@ -193,7 +193,7 @@
 
             <button type="submit" class="ui-button">Register Admin</button>
             <div class="mt-6 text-center">
-                <a href="/admin/login" class="text-gray-500 text-xs font-bold hover:text-white transition-colors">BACK TO LOGIN</a>
+                <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/login" class="text-gray-500 text-xs font-bold hover:text-white transition-colors">BACK TO LOGIN</a>
             </div>
         </form>
     </div>

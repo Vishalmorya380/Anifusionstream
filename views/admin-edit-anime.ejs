@@ -1,6 +1,7 @@
 <%- include('partials/header') %>
 
 <style>
+    /* Global Variables & Base Setup */
     :root {
         --bg-deep: #0b0e11;
         --card-navy: #151b23;
@@ -8,9 +9,10 @@
         --primary-blue: #3b82f6;
         --text-muted: #9ca3af;
         --danger-red: #ef4444;
+        --success-green: #10b981;
     }
 
-    /* Removed 'body' block to prevent conflicts with header.ejs padding and overflow lock */
+    /* FIXED: Removed the html, body block to prevent conflicts with header.ejs padding and overflow lock */
 
     .admin-wrapper {
         display: flex;
@@ -25,19 +27,20 @@
     .ui-card {
         background-color: var(--card-navy);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 2rem;
+        backdrop-filter: blur(20px);
+        border-radius: 2.5rem;
         width: 100%;
         max-width: 650px;
-        padding: 3rem;
+        padding: 3.5rem;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
 
     .ui-label {
         font-size: 0.75rem;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.1em;
         margin-bottom: 0.75rem;
         display: block;
     }
@@ -45,11 +48,13 @@
     .ui-input {
         background-color: var(--input-dark);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 0.85rem;
+        border-radius: 1rem;
         color: #ffffff;
         padding: 1.1rem;
         width: 100%;
         transition: all 0.2s ease;
+        font-size: 0.95rem;
+        box-sizing: border-box;
     }
 
     .ui-input:focus {
@@ -58,6 +63,160 @@
         box-shadow: 0 0 0 1px var(--primary-blue);
     }
 
+    .ui-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: rgba(28, 35, 45, 0.5);
+    }
+
+    .ui-button {
+        background-color: var(--primary-blue);
+        color: #ffffff;
+        font-weight: 800;
+        padding: 1.2rem;
+        border-radius: 1.25rem;
+        width: 100%;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        border: none;
+        cursor: pointer;
+        margin-top: 1rem;
+    }
+
+    .ui-button:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.1);
+        box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);
+    }
+
+    .back-link {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-decoration: none;
+        margin-bottom: 2rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .back-link:hover { color: #fff; }
+
+    .movie-notice {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .movie-notice-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .movie-notice-text {
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #fca5a5;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1.4;
+    }
+
+    .server-box {
+        background: rgba(28, 35, 45, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .server-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .server-title {
+        font-size: 0.85rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--primary-blue);
+    }
+
+    .remove-server-btn {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .remove-server-btn:hover { background: rgba(239, 68, 68, 0.3); transform: scale(1.05); }
+
+    .add-server-btn {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #6ee7b7;
+        padding: 0.8rem 1.2rem;
+        border-radius: 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .add-server-btn:hover { background: rgba(16, 185, 129, 0.2); transform: translateY(-1px); }
+    .add-server-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .input-hint {
+        font-size: 10px;
+        color: #64748b;
+        margin-top: 6px;
+        font-weight: 700;
+        text-transform: uppercase;
+        display: block;
+    }
+
+    .flash-alert {
+        padding: 1rem 1.25rem;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .flash-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+    .flash-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+
+    .form-error {
+        color: var(--danger-red);
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+        display: none;
+    }
+    .form-error.show { display: block; }
+    
     .genre-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -67,7 +226,6 @@
         border-radius: 1.25rem;
         border: 1px solid rgba(255,255,255,0.02);
     }
-
     .genre-item {
         display: flex;
         align-items: center;
@@ -76,50 +234,14 @@
         cursor: pointer;
         transition: color 0.2s;
     }
-
     .genre-item:hover { color: #fff; }
-
     input[type="checkbox"] {
         margin-right: 10px;
         accent-color: var(--primary-blue);
         width: 18px;
         height: 18px;
     }
-
-    .ui-button {
-        background-color: var(--primary-blue);
-        color: #ffffff;
-        font-weight: 700;
-        padding: 1.15rem;
-        border-radius: 1rem;
-        width: 100%;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: none;
-        cursor: pointer;
-    }
-
-    .ui-button:hover:not(:disabled) {
-        transform: translateY(-2px);
-        filter: brightness(1.1);
-        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-    }
-
-    .ui-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .back-link {
-        color: var(--primary-blue);
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-decoration: none;
-        margin-bottom: 1.5rem;
-        display: inline-block;
-    }
-
+    
     .type-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -170,7 +292,7 @@
         color: var(--text-muted);
         margin-top: 0.25rem;
     }
-
+    
     .warning-box {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.3);
@@ -187,36 +309,28 @@
         letter-spacing: 0.05em;
     }
     
-    .form-error {
-        color: var(--danger-red);
-        font-size: 0.75rem;
-        font-weight: 800;
-        margin-top: 0.75rem;
-        display: none;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .form-error.show { display: block; }
-
     @media (max-width: 640px) {
         .type-selector { grid-template-columns: 1fr; }
     }
 </style>
 
 <div class="admin-wrapper">
+
     <div class="text-center mb-10">
-        <a href="/admin/dashboard" class="back-link">← BACK TO DASHBOARD</a>
-        <h1 class="text-4xl md:text-5xl font-black tracking-tight">
+        <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="back-link">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Discard Changes
+        </a>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tighter uppercase">
             Update <span class="text-blue-500">Anime</span>
         </h1>
-        <p class="text-gray-500 mt-2">Editing Metadata for: <span class="text-white font-bold"><%= anime.name %></span></p>
+        <p class="text-gray-500 mt-2 font-medium">Editing Metadata for: <span class="text-white font-bold"><%= anime.name %></span></p>
     </div>
 
     <%- include('partials/flash') %>
 
     <div class="ui-card">
-        <form action="/admin/edit-anime/<%= anime._id %>" method="POST" id="editAnimeForm">
+        <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/edit-anime/<%= anime._id %>" method="POST" id="editAnimeForm">
 
             <div class="mb-8">
                 <label class="ui-label">Content Type</label>
@@ -255,6 +369,11 @@
                 <input type="text" name="imageUrl" value="<%= anime.imageUrl %>" class="ui-input" required maxlength="500">
             </div>
 
+         <div class="mb-8">
+                <label class="ui-label">Language / Format <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                <input type="text" name="languageFormat" value="<%= anime.languageFormat || '' %>" class="ui-input" placeholder="e.g. Sub | Dub | English" maxlength="50">
+            </div>
+
             <div class="mb-8">
                 <label class="ui-label">Synopsis / Description</label>
                 <textarea name="description" rows="5" class="ui-input" required maxlength="5000"><%= anime.description %></textarea>
@@ -263,13 +382,17 @@
             <div class="mb-10">
                 <label class="ui-label">Categories / Genres</label>
                 <div class="genre-grid">
-                    <% genres.forEach(genre => { %>
-                        <label class="genre-item">
-                            <input type="checkbox" name="genres" value="<%= genre._id %>"
-                                <%= anime.genres.some(g => g._id.toString() === genre._id.toString()) ? 'checked' : '' %>>
-                            <%= genre.name %>
-                        </label>
-                    <% }) %>
+                    <% if (typeof genres !== 'undefined' && genres && genres.length > 0) { %>
+                        <% genres.forEach(genre => { %>
+                            <label class="genre-item">
+                                <input type="checkbox" name="genres" value="<%= genre._id %>"
+                                    <%= anime.genres.some(g => g._id.toString() === genre._id.toString()) ? 'checked' : '' %>>
+                                <%= genre.name %>
+                            </label>
+                        <% }) %>
+                    <% } else { %>
+                        <p class="text-gray-500 text-sm col-span-full text-center">No genres available. Add some in Manage Categories.</p>
+                    <% } %>
                 </div>
                 <div class="form-error" id="genreError">⚠️ Please select at least one genre before saving.</div>
             </div>

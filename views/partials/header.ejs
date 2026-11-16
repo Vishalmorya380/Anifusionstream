@@ -39,6 +39,23 @@
     <!-- SEO Canonical Tag -->
     <link rel="canonical" href="https://anifusionstream.online<%= typeof currentPath !== 'undefined' ? currentPath : '' %>" />
 
+<script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "AniFusionStream",
+      "url": "https://anifusionstream.online/",
+      "logo": "https://anifusionstream.online/images/logo.png",
+      "sameAs": [
+        "https://t.me/anifusionstream",
+        "https://discord.gg/CSncMsuB",
+        "https://www.instagram.com/anifusionstream",
+        "https://www.facebook.com/profile.php?id=61594806194587",
+        "https://www.threads.net/@anifusionstream"
+      ]
+    }
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Watch your favorite anime series online. Explore by genre, seasons, and episodes.">
@@ -274,11 +291,11 @@
                 <!-- EJS SAFE CHECK FOR ADMIN -->
                 <% if (typeof session !== 'undefined' && session.isAdminAuthenticated) { %>
                     <div class="nav-divider"></div>
-                    <a href="/admin/dashboard" class="nav-link text-yellow-400 hover:text-yellow-300 flex items-center gap-2">
+                    <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="nav-link text-yellow-400 hover:text-yellow-300 flex items-center gap-2">
                         <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                         Dashboard
                     </a>
-                    <form action="/admin/logout" method="POST" class="inline">
+                    <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/logout" method="POST" class="inline">
                         <button type="submit" class="nav-link text-red-400 hover:text-red-300 flex items-center gap-2">
                             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
                             Admin Logout
@@ -324,7 +341,7 @@
 
             <!-- EJS SAFE CHECK FOR ADMIN MOBILE MENU -->
             <% if (typeof session !== 'undefined' && session.isAdminAuthenticated) { %>
-                <a href="/admin/dashboard" class="mobile-link">
+               <a href="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/dashboard" class="mobile-link">
                     <svg class="icon-svg text-yellow-500 w-5" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
                     <span>Admin Dashboard</span>
                 </a>
@@ -352,7 +369,7 @@
 
         <% if (typeof session !== 'undefined' && session.isAdminAuthenticated) { %>
         <div class="mt-auto p-6 space-y-3 mb-6">
-            <form action="/admin/logout" method="POST">
+            <form action="<%= typeof adminPath !== 'undefined' ? adminPath : '/admin' %>/logout" method="POST">
                 <button type="submit" class="w-full text-center py-4 bg-red-600/20 text-red-400 border border-red-600/30 rounded-xl font-black uppercase tracking-widest text-sm hover:bg-red-600/30 transition-all">
                     <svg class="icon-svg inline mr-2" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>Admin Logout
                 </button>
