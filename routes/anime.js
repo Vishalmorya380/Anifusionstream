@@ -14,7 +14,7 @@ const commentLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 5,
     message: 'Too many comments. Please wait.',
-    keyGenerator: (req) => req.visitorId 
+    keyGenerator: (req) => req.visitorId
 });
 
 // Helper: Validate MongoDB ID
@@ -26,6 +26,12 @@ const cleanComment = (text) => sanitizeHtml(text.trim(), {
     allowedAttributes: {}
 });
 
+// Helper: Resolve slug redirect URL from animeId
+async function getAnimeUrl(animeId) {
+    const anime = await Anime.findById(animeId).select('slug').lean();
+    return anime && anime.slug ? `/anime/${anime.slug}` : '/';
+}
+
 // ==========================================
 // PUBLIC VIEWS
 // ==========================================
@@ -36,17 +42,16 @@ const cleanComment = (text) => sanitizeHtml(text.trim(), {
  */
 router.get('/', async (req, res) => {
     try {
-        // Query Episodes directly. Limits to 12. O(1) performance instead of O(N).
         const latestEpisodesData = await Episode.find()
             .sort({ createdAt: -1 })
             .limit(12)
-            .populate('anime', 'name imageUrl type')
+            .populate('anime', 'name slug imageUrl type')
             .lean();
 
-        // Format to match exactly what your EJS template expects
         const latestEpisodes = latestEpisodesData.map(episode => ({
             ...episode,
             animeId: episode.anime ? episode.anime._id : null,
+            animeSlug: episode.anime ? episode.anime.slug : '',
             animeTitle: episode.anime ? episode.anime.name : 'Unknown',
             animeImage: episode.anime ? episode.anime.imageUrl : '',
             seasonNumber: episode.seasonNumber,
@@ -61,34 +66,29 @@ router.get('/', async (req, res) => {
 });
 
 /**
- * GET /:id
+ * GET /:slug
  * View Anime Details - PUBLIC: No login required
  */
-router.get('/:id', async (req, res) => {
+router.get('/:slug', async (req, res) => {
     try {
-        const { id } = req.params;
+        const slug = req.params.slug.toLowerCase();
 
-        if (!isValidId(id)) {
-            return res.status(404).render('404');
-        }
-
-        const anime = await Anime.findById(id)
-          .populate('genres')
-          .populate({
+        const anime = await Anime.findOne({ slug })
+            .populate('genres')
+            .populate({
                 path: 'seasons.episodes',
                 model: 'Episode'
             });
 
         if (!anime) return res.status(404).render('404');
 
-        const comments = await Comment.find({ anime: id, parentComment: null })
-          .populate('replies')
-          .sort({ createdAt: -1 })
-          .lean();
+        const comments = await Comment.find({ anime: anime._id, parentComment: null })
+            .populate('replies')
+            .sort({ createdAt: -1 })
+            .lean();
 
-        // Suggested titles
         const randomAnimes = await Anime.aggregate([
-            { $match: { _id: {$ne: new mongoose.Types.ObjectId(id) } } },
+            { $match: { _id: { $ne: anime._id } } },
             { $sample: { size: 8 } }
         ]);
 
@@ -97,8 +97,7 @@ router.get('/:id', async (req, res) => {
             comments,
             session: req.session,
             randomAnimes,
-            // FIXED: Send the persistent visitorId to frontend for comment ownership checks
-            guestId: req.session?.userId || req.visitorId 
+            guestId: req.session?.userId || req.visitorId
         });
 
     } catch (error) {
@@ -117,14 +116,12 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/rate/:id', async (req, res) => {
     try {
-        const { rating } = req.body; 
+        const { rating } = req.body;
         const animeId = req.params.id;
-        
-        // Future-proof Hybrid Logic (For both Logged-in users & Guests)
         const voterId = req.session?.userId || req.visitorId;
 
         if (!voterId) {
-             return res.status(400).json({ success: false, message: 'Could not verify visitor identity.' });
+            return res.status(400).json({ success: false, message: 'Could not verify visitor identity.' });
         }
 
         if (!rating || rating < 2 || rating > 10) {
@@ -138,12 +135,10 @@ router.post('/rate/:id', async (req, res) => {
         if (typeof anime.ratingCount !== 'number') anime.ratingCount = 0;
         if (typeof anime.totalRatingSum !== 'number') anime.totalRatingSum = 0;
 
-        // Block duplicate voting
         if (anime.votedUsers.includes(voterId)) {
             return res.json({ success: false, message: 'You have already voted for this anime!' });
         }
 
-        // Calculate real mathematics for the rating
         anime.votedUsers.push(voterId);
         anime.ratingCount += 1;
         anime.totalRatingSum += rating;
@@ -159,7 +154,7 @@ router.post('/rate/:id', async (req, res) => {
             newCount: anime.ratingCount,
             newPercentage: newPercentage
         });
-        
+
     } catch (err) {
         console.error('Rating Error:', err);
         res.status(500).json({ success: false, message: 'Server error. Failed to save vote.' });
@@ -179,32 +174,32 @@ router.post('/comment/:animeId', commentLimiter, async (req, res) => {
         return res.redirect('/');
     }
 
+    const redirectUrl = await getAnimeUrl(animeId);
     const cleanContent = cleanComment(content || '');
     const cleanName = cleanComment(guestName || '').substring(0, 50);
     const cleanEmail = (guestEmail || '').trim().toLowerCase();
 
     if (!cleanContent || cleanContent.length < 2) {
         req.flash('error', 'Comment too short.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     if (!cleanName || cleanName.length < 2) {
         req.flash('error', 'Name is required.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
         req.flash('error', 'Valid email is required.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     if (cleanContent.length > 500) {
         req.flash('error', 'Comment too long. Max 500 characters.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     try {
-        // FIXED: Use persistent visitorId instead of temporary session ID
         const activeUserId = req.session?.userId || req.visitorId;
 
         const userCommentCount = await Comment.countDocuments({
@@ -215,7 +210,7 @@ router.post('/comment/:animeId', commentLimiter, async (req, res) => {
 
         if (userCommentCount >= 5) {
             req.flash('error', 'Comment limit reached at max 5. If you want to make another comment, delete an old comment first.');
-            return res.redirect(`/anime/${animeId}`);
+            return res.redirect(redirectUrl);
         }
 
         const comment = new Comment({
@@ -229,11 +224,11 @@ router.post('/comment/:animeId', commentLimiter, async (req, res) => {
 
         await comment.save();
         req.flash('success', 'Comment posted.');
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
     } catch (error) {
         console.error('Comment post error:', error);
         req.flash('error', 'Failed to post comment.');
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
     }
 });
 
@@ -250,33 +245,33 @@ router.post('/comment/reply/:animeId/:commentId', commentLimiter, async (req, re
         return res.redirect('/');
     }
 
+    const redirectUrl = await getAnimeUrl(animeId);
     const cleanContent = cleanComment(content || '');
     const cleanName = cleanComment(guestName || '').substring(0, 50);
     const cleanEmail = (guestEmail || '').trim().toLowerCase();
 
     if (!cleanContent || cleanContent.length < 2) {
         req.flash('error', 'Reply too short.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     if (!cleanName || cleanName.length < 2) {
         req.flash('error', 'Name is required.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
         req.flash('error', 'Valid email is required.');
-        return res.redirect(`/anime/${animeId}`);
+        return res.redirect(redirectUrl);
     }
 
     try {
         const parent = await Comment.findById(commentId);
         if (!parent) {
             req.flash('error', 'Parent comment not found.');
-            return res.redirect(`/anime/${animeId}`);
+            return res.redirect(redirectUrl);
         }
 
-        // FIXED: Use persistent visitorId instead of temporary session ID
         const activeUserId = req.session?.userId || req.visitorId;
 
         const reply = new Comment({
@@ -294,10 +289,10 @@ router.post('/comment/reply/:animeId/:commentId', commentLimiter, async (req, re
         await parent.save();
 
         req.flash('success', 'Reply posted.');
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
     } catch (error) {
         console.error('Reply error:', error);
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
     }
 });
 
@@ -313,18 +308,19 @@ router.post('/comment/delete/:animeId/:commentId', async (req, res) => {
         return res.redirect('/');
     }
 
+    const redirectUrl = await getAnimeUrl(animeId);
+
     try {
         const comment = await Comment.findById(commentId);
-        if (!comment) return res.redirect(`/anime/${animeId}`);
+        if (!comment) return res.redirect(redirectUrl);
 
         const isAdmin = !!req.session.isAdminAuthenticated;
-        // FIXED: Check against persistent visitorId
         const activeUserId = req.session?.userId || req.visitorId;
         const isOwner = comment.guestId === activeUserId;
 
         if (!isAdmin && !isOwner) {
             req.flash('error', 'You can only delete your own comments.');
-            return res.redirect(`/anime/${animeId}`);
+            return res.redirect(redirectUrl);
         }
 
         const cleanDelete = async (id) => {
@@ -343,11 +339,11 @@ router.post('/comment/delete/:animeId/:commentId', async (req, res) => {
 
         await Comment.findByIdAndDelete(commentId);
         req.flash('success', 'Comment removed.');
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
 
     } catch (error) {
         console.error('Delete Comment Error:', error);
-        res.redirect(`/anime/${animeId}`);
+        res.redirect(redirectUrl);
     }
 });
 

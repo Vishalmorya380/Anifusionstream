@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); // FIXED: Moved to global imports
+const mongoose = require('mongoose');
 const Anime = require('../models/Anime');
 const Genre = require('../models/Genre');
 const Episode = require('../models/Episode');
@@ -26,7 +26,7 @@ router.get('/', (req, res) => {
  * New landing page - no auth required
  */
 router.get('/welcome', (req, res) => {
-    res.render('welcome'); // views/welcome.ejs
+    res.render('welcome');
 });
 
 /**
@@ -79,25 +79,26 @@ router.get('/home', async (req, res) => {
         // SEARCH OR GENRE FILTER PAGE (Paginated)
         if (renderData.isSearchResult) {
             if (searchQuery) {
-                const exactMatch = await Anime.findOne({ name: new RegExp(`^${searchQuery}$`, 'i') }).lean();
-                if (exactMatch) return res.redirect(`/anime/${exactMatch._id}`);
+                const exactMatch = await Anime.findOne({ name: new RegExp(`^${searchQuery}$`, 'i') })
+                    .select('slug _id')
+                    .lean();
+                if (exactMatch) return res.redirect(`/anime/${exactMatch.slug || exactMatch._id}`);
             }
 
             const animeQuery = {};
-            if (searchQuery) animeQuery.name = { $regex: searchQuery,$options: 'i' };
-            
-            // FIXED: Prevent CastError server crash if user enters invalid text into the ?genre= URL parameter
+            if (searchQuery) animeQuery.name = { $regex: searchQuery, $options: 'i' };
+
             if (selectedGenre && mongoose.Types.ObjectId.isValid(selectedGenre)) {
                 animeQuery.genres = selectedGenre;
             }
 
             const [animes, totalAnimes] = await Promise.all([
                 Anime.find(animeQuery)
-                  .select('name imageUrl updatedAt type status') // FIXED: Added status
-                  .sort({ updatedAt: -1, _id: -1 })
-                  .skip((page - 1) * limit)
-                  .limit(limit)
-                  .lean(),
+                    .select('name slug imageUrl updatedAt type status')
+                    .sort({ updatedAt: -1, _id: -1 })
+                    .skip((page - 1) * limit)
+                    .limit(limit)
+                    .lean(),
                 Anime.countDocuments(animeQuery)
             ]);
 
@@ -113,10 +114,10 @@ router.get('/home', async (req, res) => {
 
             const fetchInitialAnimes = (genreId) => {
                 return Anime.find({ genres: genreId })
-                  .select('name imageUrl updatedAt type status') // FIXED: Added status
-                  .sort({ updatedAt: -1, _id: -1 })
-                  .limit(6)
-                  .lean();
+                    .select('name slug imageUrl updatedAt type status')
+                    .sort({ updatedAt: -1, _id: -1 })
+                    .limit(6)
+                    .lean();
             };
 
             const allGroups = [...latestGenres, ...normalGenres, ...movieGenres];
@@ -128,19 +129,20 @@ router.get('/home', async (req, res) => {
             renderData.normalGenres = normalGenres.filter(g => g.initialAnimes.length > 0);
             renderData.movieGenres = movieGenres.filter(g => g.initialAnimes.length > 0);
 
-            const latestEpisodesData = await Episode.find({ anime: { $exists: true,$ne: null } })
-              .sort({ createdAt: -1 })
-              .limit(20)
-              .lean();
+            const latestEpisodesData = await Episode.find({ anime: { $exists: true, $ne: null } })
+                .sort({ createdAt: -1 })
+                .limit(20)
+                .lean();
 
             const animeIds = [...new Set(latestEpisodesData.map(ep => ep.anime.toString()))];
-            // FIXED: Added status
-            const animeMap = await Anime.find({ _id: { $in: animeIds } }).select('name imageUrl type status').lean(); 
+            const animeMap = await Anime.find({ _id: { $in: animeIds } })
+                .select('name slug imageUrl type status')
+                .lean();
             const animeLookup = Object.fromEntries(animeMap.map(a => [a._id.toString(), a]));
 
             renderData.latestEpisodes = latestEpisodesData
-              .filter(ep => animeLookup[ep.anime.toString()])
-              .map(ep => ({ ...ep, anime: animeLookup[ep.anime.toString()] }));
+                .filter(ep => animeLookup[ep.anime.toString()])
+                .map(ep => ({ ...ep, anime: animeLookup[ep.anime.toString()] }));
         }
 
         res.render('index', renderData);
@@ -165,10 +167,10 @@ router.get('/api/search-suggestions', async (req, res) => {
         const q = req.query.q ? escapeRegex(req.query.q.trim()) : '';
         if (!q || q.length < 2) return res.json([]);
 
-        const animes = await Anime.find({ name: { $regex: q,$options: 'i' } })
-          .select('name _id')
-          .limit(6)
-          .lean();
+        const animes = await Anime.find({ name: { $regex: q, $options: 'i' } })
+            .select('name slug _id')
+            .limit(6)
+            .lean();
 
         res.json(animes);
     } catch (err) {
@@ -189,11 +191,11 @@ router.get('/api/genre/:id/load', async (req, res) => {
         }
 
         const animes = await Anime.find({ genres: genreId })
-          .select('name imageUrl updatedAt type status') // FIXED: Added status
-          .sort({ updatedAt: -1, _id: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean();
+            .select('name slug imageUrl updatedAt type status')
+            .sort({ updatedAt: -1, _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         res.json(animes);
     } catch (err) {
@@ -260,7 +262,6 @@ router.get('/api/trending-picks', async (req, res) => {
         const cached = trendingCache.get('trendingPicks');
         if (cached) return res.json(cached);
 
-        // FIXED: Added 'status' to GraphQL queries
         const query = `
         query {
             series: Page(page: 1, perPage: 5) {
@@ -303,7 +304,7 @@ router.get('/api/trending-picks', async (req, res) => {
             duration: media.duration ? `${media.duration} min.` : (media.episodes ? `${media.episodes} eps` : 'N/A'),
             year: media.seasonYear || 'TBA',
             img: media.coverImage.large,
-            status: media.status ? media.status.replace(/_/g, ' ') : 'UNKNOWN' // Formats RELEASING to RELEASING
+            status: media.status ? media.status.replace(/_/g, ' ') : 'UNKNOWN'
         });
 
         const result = {

@@ -12,8 +12,6 @@
         --success-green: #10b981;
     }
 
-    /* FIXED: Removed the html, body block to prevent conflicts with header.ejs padding and overflow lock */
-
     .admin-wrapper {
         display: flex;
         flex-direction: column;
@@ -63,8 +61,9 @@
         box-shadow: 0 0 0 1px var(--primary-blue);
     }
 
-    .ui-input:disabled {
-        opacity: 0.5;
+    .ui-input:disabled,
+    .ui-input[readonly] {
+        opacity: 0.6;
         cursor: not-allowed;
         background: rgba(28, 35, 45, 0.5);
     }
@@ -84,10 +83,15 @@
         margin-top: 1rem;
     }
 
-    .ui-button:hover {
+    .ui-button:hover:not(:disabled) {
         transform: translateY(-2px);
         filter: brightness(1.1);
         box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);
+    }
+
+    .ui-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .back-link {
@@ -105,108 +109,6 @@
 
     .back-link:hover { color: #fff; }
 
-    .movie-notice {
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        border-radius: 1rem;
-        padding: 1rem;
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .movie-notice-icon { font-size: 1.5rem; flex-shrink: 0; }
-    .movie-notice-text {
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: #fca5a5;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        line-height: 1.4;
-    }
-
-    .server-box {
-        background: rgba(28, 35, 45, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        position: relative;
-    }
-
-    .server-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .server-title {
-        font-size: 0.85rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--primary-blue);
-    }
-
-    .remove-server-btn {
-        background: rgba(239, 68, 68, 0.2);
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        color: #fca5a5;
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.5rem;
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .remove-server-btn:hover { background: rgba(239, 68, 68, 0.3); transform: scale(1.05); }
-
-    .add-server-btn {
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #6ee7b7;
-        padding: 0.8rem 1.2rem;
-        border-radius: 0.75rem;
-        font-size: 0.75rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        width: 100%;
-        margin-bottom: 1rem;
-    }
-
-    .add-server-btn:hover { background: rgba(16, 185, 129, 0.2); transform: translateY(-1px); }
-    .add-server-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .input-hint {
-        font-size: 10px;
-        color: #64748b;
-        margin-top: 6px;
-        font-weight: 700;
-        text-transform: uppercase;
-        display: block;
-    }
-
-    .flash-alert {
-        padding: 1rem 1.25rem;
-        border-radius: 1rem;
-        margin-bottom: 1.5rem;
-        font-size: 0.85rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .flash-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
-    .flash-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
-
     .form-error {
         color: var(--danger-red);
         font-size: 0.75rem;
@@ -216,7 +118,7 @@
         display: none;
     }
     .form-error.show { display: block; }
-    
+
     .genre-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -241,7 +143,7 @@
         width: 18px;
         height: 18px;
     }
-    
+
     .type-selector {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -292,7 +194,7 @@
         color: var(--text-muted);
         margin-top: 0.25rem;
     }
-    
+
     .warning-box {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.3);
@@ -308,8 +210,9 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    
+
     @media (max-width: 640px) {
+        .ui-card { padding: 2rem 1.5rem; }
         .type-selector { grid-template-columns: 1fr; }
     }
 </style>
@@ -369,7 +272,55 @@
                 <input type="text" name="imageUrl" value="<%= anime.imageUrl %>" class="ui-input" required maxlength="500">
             </div>
 
-         <div class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="ui-label">AniList ID (Season 1) <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                    <input type="number" name="anilistId" value="<%= anime.anilistId || '' %>" class="ui-input" placeholder="e.g. 151807" min="1">
+                </div>
+                <div>
+                    <label class="ui-label">TMDB ID <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                    <input type="number" name="tmdbId" value="<%= anime.tmdbId || '' %>" class="ui-input" placeholder="e.g. 1357633" min="1">
+                </div>
+            </div>
+
+            <!-- Per-Season AniList IDs -->
+            <div class="mb-8 p-5 rounded-2xl bg-black/20 border border-white/10" id="seasonIdsSection">
+                <div class="flex items-center justify-between mb-4">
+                    <label class="ui-label mb-0">Season AniList IDs <span class="text-gray-500 text-xs font-normal ml-2">(Per-Season Sync Mapping)</span></label>
+                    <button type="button" id="addSeasonRowBtn" class="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold uppercase hover:bg-blue-600 hover:text-white transition-all">
+                        + Add Season
+                    </button>
+                </div>
+                <div id="seasonRowsContainer" class="space-y-3">
+                    <% if (anime.seasons && anime.seasons.length > 0) { %>
+                        <% anime.seasons.forEach(season => { %>
+                            <div class="grid grid-cols-12 gap-3 items-center season-row">
+                                <div class="col-span-4">
+                                    <input type="number" name="seasonNumbers[]" value="<%= season.seasonNumber %>" min="1" class="ui-input" readonly>
+                                </div>
+                                <div class="col-span-8">
+                                    <input type="number" name="seasonAnilistIds[]" value="<%= season.anilistId || '' %>" min="1" class="ui-input" placeholder="Season <%= season.seasonNumber %> AniList ID">
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="grid grid-cols-12 gap-3 items-center season-row">
+                            <div class="col-span-4">
+                                <input type="number" name="seasonNumbers[]" value="2" min="2" class="ui-input" placeholder="Season #">
+                            </div>
+                            <div class="col-span-7">
+                                <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season 2 AniList ID (Optional)">
+                            </div>
+                            <div class="col-span-1 text-right">
+                                <button type="button" class="remove-season-btn text-red-400 hover:text-red-300 font-bold text-lg px-2">&times;</button>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-3 uppercase tracking-wider">Existing seasons are locked to protect episodes. Update their AniList IDs or add a new season.</p>
+            </div>
+
+            <div class="mb-8">
                 <label class="ui-label">Language / Format <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
                 <input type="text" name="languageFormat" value="<%= anime.languageFormat || '' %>" class="ui-input" placeholder="e.g. Sub | Dub | English" maxlength="50">
             </div>
@@ -422,14 +373,9 @@
             option.classList.add('active');
             option.querySelector('input').checked = true;
 
-            // Show warning if changing series to movie
-            if(warningBox) {
+            if (warningBox) {
                 const newType = option.querySelector('input').value;
-                if(currentType === 'series' && newType === 'movie') {
-                    warningBox.style.display = 'block';
-                } else {
-                    warningBox.style.display = 'none';
-                }
+                warningBox.style.display = (currentType === 'series' && newType === 'movie') ? 'block' : 'none';
             }
         });
     });
@@ -469,6 +415,41 @@
                 genreError.classList.remove('show');
             }
         });
+    });
+
+    // 3. Manage Per-Season AniList IDs
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('seasonRowsContainer');
+        const addBtn = document.getElementById('addSeasonRowBtn');
+
+        if (addBtn && container) {
+            addBtn.addEventListener('click', () => {
+                const nums = Array.from(container.querySelectorAll('input[name="seasonNumbers[]"]'))
+                    .map(el => Number(el.value) || 1);
+                const nextSeason = nums.length ? Math.max(...nums) + 1 : 2;
+
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-12 gap-3 items-center season-row';
+                row.innerHTML = `
+                    <div class="col-span-4">
+                        <input type="number" name="seasonNumbers[]" value="${nextSeason}" min="2" class="ui-input" placeholder="Season #">
+                    </div>
+                    <div class="col-span-7">
+                        <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season ${nextSeason} AniList ID (Optional)">
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button type="button" class="remove-season-btn text-red-400 hover:text-red-300 font-bold text-lg px-2">&times;</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            container.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-season-btn')) {
+                    e.target.closest('.season-row').remove();
+                }
+            });
+        }
     });
 </script>
 

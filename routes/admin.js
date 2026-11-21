@@ -294,6 +294,12 @@ router.post('/delete-message/:id', ensureAuthenticatedAdmin, async (req, res) =>
     res.redirect(`${adminBase}/dashboard`);
 });
 
+// Helper to normalize form array fields
+function toArray(val) {
+    if (!val) return [];
+    return Array.isArray(val) ? val : [val];
+}
+
 // ==========================================
 // 4. ANIME MANAGEMENT (CRUD)
 // ==========================================
@@ -309,8 +315,11 @@ router.get('/add-anime', ensureAuthenticatedAdmin, async (req, res) => {
 
 router.post('/add-anime', ensureAuthenticatedAdmin, async (req, res) => {
     try {
-        // NEW: Extracted languageFormat from req.body
-        const { name, imageUrl, description, genres, specialInfo, type, languageFormat } = req.body;
+        const {
+            name, imageUrl, description, genres, specialInfo,
+            type, languageFormat, anilistId, tmdbId,
+            seasonNumbers, seasonAnilistIds
+        } = req.body;
 
         if (!name || !name.trim()) {
             req.flash('error', 'Anime name is required.');
@@ -327,16 +336,54 @@ router.post('/add-anime', ensureAuthenticatedAdmin, async (req, res) => {
             return res.redirect(`${adminBase}/add-anime`);
         }
 
-        await Anime.create({
+        const animeData = {
             name: trimmedName,
             imageUrl: imageUrl?.trim() || '',
             description: description?.trim() || '',
             specialInfo: specialInfo?.trim() || '',
-            // NEW: Saving languageFormat to database
-            languageFormat: languageFormat?.trim() || '', 
-            genres: Array.isArray(genres) ? genres : (genres ? [genres] : []),
-            type: type || 'series'
-        });
+            languageFormat: languageFormat?.trim() || '',
+            genres: toArray(genres),
+            type: type || 'series',
+            seasons: []
+        };
+
+        if (anilistId && !isNaN(Number(anilistId))) {
+            animeData.anilistId = Number(anilistId);
+        }
+        if (tmdbId && !isNaN(Number(tmdbId))) {
+            animeData.tmdbId = Number(tmdbId);
+        }
+
+        // Build per-season AniList IDs ONLY when an AniList ID is actually filled
+        const sNums = toArray(seasonNumbers);
+        const sIds = toArray(seasonAnilistIds);
+        const seenSeasons = new Set();
+
+        for (let i = 0; i < sNums.length; i++) {
+            const sNum = Number(sNums[i]);
+            const sAlId = sIds[i] && !isNaN(Number(sIds[i])) ? Number(sIds[i]) : undefined;
+            if (sNum >= 1 && sAlId && !seenSeasons.has(sNum)) {
+                seenSeasons.add(sNum);
+                animeData.seasons.push({
+                    seasonNumber: sNum,
+                    anilistId: sAlId,
+                    episodes: []
+                });
+            }
+        }
+
+        // If Season 1 wasn't manually added but main anilistId exists, initialize Season 1
+        if (animeData.type === 'series' && animeData.anilistId && !seenSeasons.has(1)) {
+            animeData.seasons.unshift({
+                seasonNumber: 1,
+                anilistId: animeData.anilistId,
+                episodes: []
+            });
+        }
+
+        animeData.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+
+        await Anime.create(animeData);
 
         req.flash('success', 'Catalog Updated: New anime title initialized.');
         res.redirect(`${adminBase}/dashboard`);
@@ -344,7 +391,7 @@ router.post('/add-anime', ensureAuthenticatedAdmin, async (req, res) => {
     } catch (err) {
         console.error('Add anime error:', err);
         if (err.code === 11000) {
-            req.flash('error', `Protocol failure: "${req.body.name}" already exists.`);
+            req.flash('error', `Protocol failure: Duplicate name or AniList ID already exists.`);
             return res.redirect(`${adminBase}/add-anime`);
         }
         req.flash('error', 'Protocol failure: Anime not added - ' + err.message);
@@ -361,6 +408,11 @@ router.get('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
         const anime = await Anime.findById(req.params.id).populate('genres').lean();
         const genres = await Genre.find().lean();
         if (!anime) return res.redirect(`${adminBase}/dashboard`);
+
+        if (anime.seasons && anime.seasons.length > 0) {
+            anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+        }
+
         res.render('admin-edit-anime', { anime, genres });
     } catch (err) {
         res.redirect(`${adminBase}/dashboard`);
@@ -374,8 +426,17 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
             return res.redirect(`${adminBase}/dashboard`);
         }
 
-        // NEW: Extracted languageFormat from req.body
-        const { name, imageUrl, description, genres, specialInfo, type, languageFormat } = req.body;
+        const anime = await Anime.findById(req.params.id);
+        if (!anime) {
+            req.flash('error', 'Anime not found.');
+            return res.redirect(`${adminBase}/dashboard`);
+        }
+
+        const {
+            name, imageUrl, description, genres, specialInfo,
+            type, languageFormat, anilistId, tmdbId,
+            seasonNumbers, seasonAnilistIds
+        } = req.body;
         const trimmedName = name.trim();
 
         const duplicate = await Anime.findOne({
@@ -388,25 +449,59 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
             return res.redirect(`${adminBase}/edit-anime/${req.params.id}`);
         }
 
-        await Anime.findByIdAndUpdate(req.params.id, {
-            name: trimmedName,
-            imageUrl: imageUrl?.trim() || '',
-            description: description?.trim() || '',
-            specialInfo: specialInfo?.trim() || '',
-            // NEW: Updating languageFormat in database
-            languageFormat: languageFormat?.trim() || '',
-            genres: Array.isArray(genres) ? genres : (genres ? [genres] : []),
-            type: type || 'series',
-            updatedAt: new Date()
-        });
+        anime.name = trimmedName;
+        anime.imageUrl = imageUrl?.trim() || '';
+        anime.description = description?.trim() || '';
+        anime.specialInfo = specialInfo?.trim() || '';
+        anime.languageFormat = languageFormat?.trim() || '';
+        anime.genres = toArray(genres);
+        anime.type = type || 'series';
+        anime.anilistId = (anilistId && !isNaN(Number(anilistId))) ? Number(anilistId) : undefined;
+        anime.tmdbId = (tmdbId && !isNaN(Number(tmdbId))) ? Number(tmdbId) : undefined;
 
-        req.flash('success', 'Metadata Refined: Anime details saved.');
+        // Update per-season AniList IDs WITHOUT wiping existing episodes
+        const sNums = toArray(seasonNumbers);
+        const sIds = toArray(seasonAnilistIds);
+
+        for (let i = 0; i < sNums.length; i++) {
+            const sNum = Number(sNums[i]);
+            if (!sNum || sNum < 1) continue;
+
+            const sAlId = (sIds[i] && !isNaN(Number(sIds[i]))) ? Number(sIds[i]) : undefined;
+            const existingSeason = anime.seasons.find(s => s.seasonNumber === sNum);
+
+            if (existingSeason) {
+                existingSeason.anilistId = sAlId;
+            } else if (sAlId) {
+                // Only create a new season if an AniList ID was actually entered
+                anime.seasons.push({
+                    seasonNumber: sNum,
+                    anilistId: sAlId,
+                    episodes: []
+                });
+            }
+        }
+// If Season 1 doesn't exist yet but main AniList ID is provided, initialize Season 1
+        if (anime.type === 'series' && anime.anilistId && !anime.seasons.some(s => s.seasonNumber === 1)) {
+            anime.seasons.unshift({
+                seasonNumber: 1,
+                anilistId: anime.anilistId,
+                episodes: []
+            });
+        }
+
+        anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
+        anime.updatedAt = new Date();
+
+        await anime.save();
+
+        req.flash('success', 'Metadata Refined: Anime details & season IDs saved.');
         res.redirect(`${adminBase}/dashboard`);
 
     } catch (err) {
         console.error('Edit anime error:', err);
         if (err.code === 11000) {
-            req.flash('error', 'Duplicate name detected.');
+            req.flash('error', 'Duplicate name or AniList ID detected.');
             return res.redirect(`${adminBase}/edit-anime/${req.params.id}`);
         }
         req.flash('error', 'Catalog Error: Update failed.');

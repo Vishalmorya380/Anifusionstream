@@ -7,7 +7,6 @@
     width: 100%;
     position: relative;
     padding: 2rem 0;
-    /* Fades the left and right edges for a seamless infinite look */
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   }
@@ -190,20 +189,20 @@
 <div class="carousel-wrapper">
   <div id="carouselTrack" class="carousel-track">
     <% 
-   const items = [
-      { name: "Tomb Raider", glow: "#22d3ee", img: "/images/Tomb Raider.png", id: "6a7da4b655e3fa10b91c5ffc" },
-      { name: "PSYREN", glow: "#ef4444", img: "/images/PSYREN.png", id: "6ae5f1a44385ac9dab994633" },
-      { name: "Solo Leveling", glow: "#22d3ee", img: "/images/Solo Leveling.png", id: "69e60ef0074e015198de2599" },
-      { name: "Naruto Shippuden", glow: "#f97316", img: "/images/naruto.png", id: "6a2427062342c893bef1834c" },
-      { name: "Bleach", glow: "#ef4444", img: "/images/Bleach.png", id: "69e5bcd9de07091ad6765664" },
-      { name: "Jujutsu Kaisen", glow: "#a855f7", img: "/images/jujutsu kaisen.png", id: "69ff500c9a15df0941fde343" },
-      { name: "Demon Slayer", glow: "#ef4444", img: "/images/Demon Slayer.png", id: "69e5c9c2de07091ad6765824" },
-      { name: "Teogonia", glow: "#3b82f6", img: "/images/Teogonia.png", id: "69e5cb57de07091ad676585f" }
-    ]; 
+      const items = [
+        { name: "Tomb Raider", glow: "#22d3ee", img: "/images/Tomb Raider.png", slug: "tomb-raider-king" },
+        { name: "PSYREN", glow: "#ef4444", img: "/images/PSYREN.png", slug: "psyren" },
+        { name: "Solo Leveling", glow: "#22d3ee", img: "/images/Solo Leveling.png", slug: "solo-leveling" },
+        { name: "Naruto Shippuden", glow: "#f97316", img: "/images/naruto.png", slug: "naruto-shippuden" },
+        { name: "Bleach", glow: "#ef4444", img: "/images/Bleach.png", slug: "bleach-season-2-thousand-year-blood-war-the-calamity" },
+        { name: "Jujutsu Kaisen", glow: "#a855f7", img: "/images/jujutsu kaisen.png", slug: "jujutsu-kaisen-the-culling-game-season-3" },
+        { name: "Demon Slayer", glow: "#ef4444", img: "/images/Demon Slayer.png", slug: "demon-slayer-kimetsu-no-yaiba" },
+        { name: "Teogonia", glow: "#3b82f6", img: "/images/Teogonia.png", slug: "teogonia" }
+      ]; 
     %>
 
     <% [...items, ...items].forEach(item => { %>
-      <a href="<%= item.id === 'REPLACE_WITH_ID' ? '/' : '/anime/' + item.id %>" class="carousel-item" style="--glow-color: <%= item.glow %>;">
+      <a href="<%= item.slug ? '/anime/' + item.slug : '/' %>" class="carousel-item" style="--glow-color: <%= item.glow %>;">
         <div class="arch-glass-card">
           <div class="jp-decor">アニメ</div>
           <img src="<%= item.img %>" alt="<%= item.name %>" />
@@ -217,15 +216,13 @@
 
 <script>
   const track = document.getElementById("carouselTrack");
-  
+
   setInterval(() => {
-    // Dynamically calculate width so it flawlessly works on Mobile and Desktop
     const firstItem = track.children[0];
     const style = window.getComputedStyle(firstItem);
     const margins = parseFloat(style.marginLeft) + parseFloat(style.marginRight);
     const currentItemWidth = firstItem.offsetWidth + margins;
-    
-    // Tech-style snap transition
+
     track.style.transition = "transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)";
     track.style.transform = `translateX(-${currentItemWidth}px)`;
 
@@ -233,6 +230,6 @@
       track.appendChild(firstItem);
       track.style.transition = "none";
       track.style.transform = "translateX(0)";
-    }, 800); // Matches the transition duration
-  }, 3500); // Slightly longer pause so users can appreciate the hover
+    }, 800);
+  }, 3500);
 </script>

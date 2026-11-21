@@ -14,8 +14,6 @@
         --success-green: #10b981;
     }
 
-    /* Removed 'body' block to prevent conflicts with header.ejs padding and overflow lock */
-
     .admin-wrapper {
         display: flex;
         flex-direction: column;
@@ -253,7 +251,41 @@
                 <input type="url" name="imageUrl" class="ui-input" placeholder="https://image-link.com/poster.jpg" required maxlength="500">
             </div>
 
-           <div class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="ui-label">AniList ID (Season 1) <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                    <input type="number" name="anilistId" class="ui-input" placeholder="e.g. 151807" min="1">
+                </div>
+                <div>
+                    <label class="ui-label">TMDB ID <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
+                    <input type="number" name="tmdbId" class="ui-input" placeholder="e.g. 1357633" min="1">
+                </div>
+            </div>
+
+            <!-- Per-Season AniList IDs (Season 2+) -->
+            <div class="mb-8 p-5 rounded-2xl bg-black/20 border border-white/10" id="seasonIdsSection">
+                <div class="flex items-center justify-between mb-4">
+                    <label class="ui-label mb-0">Season 2+ AniList IDs <span class="text-gray-500 text-xs font-normal ml-2">(Optional — for VidSync & FusionHD)</span></label>
+                    <button type="button" id="addSeasonRowBtn" class="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold uppercase hover:bg-blue-600 hover:text-white transition-all">
+                        + Add Season
+                    </button>
+                </div>
+                <div id="seasonRowsContainer" class="space-y-3">
+                    <div class="grid grid-cols-12 gap-3 items-center season-row">
+                        <div class="col-span-4">
+                            <input type="number" name="seasonNumbers[]" value="2" min="2" class="ui-input" placeholder="Season #">
+                        </div>
+                        <div class="col-span-7">
+                            <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season 2 AniList ID (Optional)">
+                        </div>
+                        <div class="col-span-1 text-right">
+                            <button type="button" class="remove-season-btn text-red-400 hover:text-red-300 font-bold text-lg px-2">&times;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8">
                 <label class="ui-label">Language / Format <span class="text-gray-500 text-xs font-normal ml-2">(Optional)</span></label>
                 <input type="text" name="languageFormat" class="ui-input" placeholder="e.g. Sub | Dub | English" maxlength="50">
             </div>
@@ -311,7 +343,6 @@
     const submitBtn = document.getElementById('submitBtn');
 
     form.addEventListener('submit', function(e) {
-        // Check if there are any genres available to select
         if (checkboxes.length > 0) {
             let isChecked = false;
             for (let i = 0; i < checkboxes.length; i++) {
@@ -321,30 +352,60 @@
                 }
             }
 
-            // If none are checked, block submission and show error
             if (!isChecked) {
                 e.preventDefault();
                 genreError.classList.add('show');
-                
-                // Scroll to the genre section so the admin sees the error
                 genreError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
         }
 
-        // Passed validation
         genreError.classList.remove('show');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Publishing...';
     });
 
-    // Remove error warning instantly if user clicks a checkbox after failing validation
     checkboxes.forEach(box => {
         box.addEventListener('change', () => {
             if (box.checked) {
                 genreError.classList.remove('show');
             }
         });
+    });
+
+    // 3. Manage Season 2+ AniList IDs
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('seasonRowsContainer');
+        const addBtn = document.getElementById('addSeasonRowBtn');
+
+        if (addBtn && container) {
+            addBtn.addEventListener('click', () => {
+                const nums = Array.from(container.querySelectorAll('input[name="seasonNumbers[]"]'))
+                    .map(el => Number(el.value) || 1);
+                const nextSeason = nums.length ? Math.max(...nums) + 1 : 2;
+
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-12 gap-3 items-center season-row';
+                row.innerHTML = `
+                    <div class="col-span-4">
+                        <input type="number" name="seasonNumbers[]" value="${nextSeason}" min="2" class="ui-input" placeholder="Season #">
+                    </div>
+                    <div class="col-span-7">
+                        <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season ${nextSeason} AniList ID (Optional)">
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button type="button" class="remove-season-btn text-red-400 hover:text-red-300 font-bold text-lg px-2">&times;</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            container.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-season-btn')) {
+                    e.target.closest('.season-row').remove();
+                }
+            });
+        }
     });
 </script>
 
