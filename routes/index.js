@@ -6,11 +6,142 @@ const Genre = require('../models/Genre');
 const Episode = require('../models/Episode');
 const axios = require('axios');
 const NodeCache = require('node-cache');
+
 const cache = new NodeCache({ stdTTL: 1800 });
 const trendingCache = new NodeCache({ stdTTL: 3600 }); // 1 hour cache
+const anilistStatusCache = new NodeCache({ stdTTL: 21600 }); // 6 hours cache
+
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 
 function escapeRegex(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+/**
+ * Fetches AniList status & episode count in batches of 50 (with 6h cache & 3s timeout)
+ * and sets `anime.cardStatus` & `anime.status` to 'Ongoing', 'Completed', or null.
+ */
+async function attachCardStatuses(animes) {
+    if (!Array.isArray(animes) || animes.length === 0) return animes;
+
+    const targetMap = new Map(); // anime._id -> { alId, dbEpCount }
+    const missingIds = new Set();
+
+    for (const anime of animes) {
+        if (anime.type === 'movie') {
+            anime.cardStatus = null;
+            anime.status = null;
+            delete anime.seasons;
+            continue;
+        }
+
+        const seasons = Array.isArray(anime.seasons) ? anime.seasons : [];
+        let targetAlId = anime.anilistId || null;
+        let dbEpCount = 0;
+
+        if (seasons.length > 0) {
+            // Find the latest season that has an anilistId
+            const sortedSeasons = [...seasons].sort((a, b) => (b.seasonNumber || 0) - (a.seasonNumber || 0));
+            const latestWithId = sortedSeasons.find(s => s.anilistId);
+
+            if (latestWithId) {
+                targetAlId = latestWithId.anilistId;
+                // Sum episodes across all seasons sharing this AniList ID (handles Naruto/Shippuden split seasons)
+                dbEpCount = seasons
+                    .filter(s => s.anilistId === targetAlId)
+                    .reduce((sum, s) => sum + (Array.isArray(s.episodes) ? s.episodes.length : 0), 0);
+            } else {
+                dbEpCount = seasons.reduce((sum, s) => sum + (Array.isArray(s.episodes) ? s.episodes.length : 0), 0);
+            }
+        }
+
+        targetMap.set(anime._id.toString(), { alId: targetAlId, dbEpCount });
+
+        if (targetAlId && anilistStatusCache.get(String(targetAlId)) === undefined) {
+            missingIds.add(Number(targetAlId));
+        }
+    }
+
+    // Batch fetch uncached AniList IDs (50 per request, 3s timeout)
+    const idsToFetch = [...missingIds];
+    for (let i = 0; i < idsToFetch.length; i += 50) {
+        const chunk = idsToFetch.slice(i, i + 50);
+        try {
+            const query = `
+                query ($ids: [Int]) {
+                    Page(page: 1, perPage: 50) {
+                        media(id_in: $ids, type: ANIME) {
+                            id
+                            status
+                            episodes
+                        }
+                    }
+                }
+            `;
+            const { data } = await axios.post(
+                'https://graphql.anilist.co',
+                { query, variables: { ids: chunk } },
+                {
+                    headers: { 'Content-Type': 'application/json', 'User-Agent': 'AniFusionStream/1.0' },
+                    timeout: 3000
+                }
+            );
+
+            const mediaList = data?.data?.Page?.media || [];
+            const foundIds = new Set();
+
+            for (const m of mediaList) {
+                foundIds.add(m.id);
+                anilistStatusCache.set(String(m.id), {
+                    status: m.status,     // RELEASING, FINISHED, NOT_YET_RELEASED, etc.
+                    episodes: m.episodes  // total episodes or null
+                });
+            }
+
+            // Cache misses as null so we don't re-query invalid IDs repeatedly
+            for (const id of chunk) {
+                if (!foundIds.has(id)) {
+                    anilistStatusCache.set(String(id), null);
+                }
+            }
+        } catch (err) {
+            console.error('AniList Batch Status Error:', err.message);
+        }
+    }
+
+    const now = Date.now();
+
+    for (const anime of animes) {
+        if (anime.type === 'movie') continue;
+
+        const info = targetMap.get(anime._id.toString());
+        const alData = info?.alId ? anilistStatusCache.get(String(info.alId)) : null;
+
+        let cardStatus = null;
+
+        if (alData) {
+            if (alData.status === 'RELEASING') {
+                cardStatus = 'Ongoing';
+            } else if (alData.status === 'FINISHED') {
+                if (alData.episodes && info.dbEpCount < alData.episodes) {
+                    // AniList par finish ho gaya, par hamari site par saare episodes abhi add nahi hue
+                    cardStatus = 'Ongoing';
+                } else if (info.dbEpCount > 0) {
+                    // Saare episodes add ho chuke hain -> 3 din tak 'Completed' dikhao, phir gayab
+                    const updatedTime = anime.updatedAt ? new Date(anime.updatedAt).getTime() : 0;
+                    if (updatedTime && (now - updatedTime) <= THREE_DAYS_MS) {
+                        cardStatus = 'Completed';
+                    }
+                }
+            }
+        }
+
+        anime.cardStatus = cardStatus;
+        anime.status = cardStatus;
+        delete anime.seasons; // Frontend ko heavy seasons array bhejne ki zaroorat nahi
+    }
+
+    return animes;
 }
 
 /**
@@ -94,13 +225,15 @@ router.get('/home', async (req, res) => {
 
             const [animes, totalAnimes] = await Promise.all([
                 Anime.find(animeQuery)
-                    .select('name slug imageUrl updatedAt type status')
+                    .select('name slug imageUrl updatedAt type anilistId seasons.seasonNumber seasons.anilistId seasons.episodes')
                     .sort({ updatedAt: -1, _id: -1 })
                     .skip((page - 1) * limit)
                     .limit(limit)
                     .lean(),
                 Anime.countDocuments(animeQuery)
             ]);
+
+            await attachCardStatuses(animes);
 
             renderData.animes = animes;
             renderData.totalResults = totalAnimes;
@@ -114,7 +247,7 @@ router.get('/home', async (req, res) => {
 
             const fetchInitialAnimes = (genreId) => {
                 return Anime.find({ genres: genreId })
-                    .select('name slug imageUrl updatedAt type status')
+                    .select('name slug imageUrl updatedAt type anilistId seasons.seasonNumber seasons.anilistId seasons.episodes')
                     .sort({ updatedAt: -1, _id: -1 })
                     .limit(6)
                     .lean();
@@ -124,6 +257,10 @@ router.get('/home', async (req, res) => {
             await Promise.all(allGroups.map(async (g) => {
                 g.initialAnimes = await fetchInitialAnimes(g._id);
             }));
+
+            // Attach AniList-based Ongoing / Completed status in one batch pass
+            const allHomepageAnimes = allGroups.flatMap(g => g.initialAnimes || []);
+            await attachCardStatuses(allHomepageAnimes);
 
             renderData.latestGenres = latestGenres.filter(g => g.initialAnimes.length > 0);
             renderData.normalGenres = normalGenres.filter(g => g.initialAnimes.length > 0);
@@ -136,7 +273,7 @@ router.get('/home', async (req, res) => {
 
             const animeIds = [...new Set(latestEpisodesData.map(ep => ep.anime.toString()))];
             const animeMap = await Anime.find({ _id: { $in: animeIds } })
-                .select('name slug imageUrl type status')
+                .select('name slug imageUrl type')
                 .lean();
             const animeLookup = Object.fromEntries(animeMap.map(a => [a._id.toString(), a]));
 
@@ -191,11 +328,13 @@ router.get('/api/genre/:id/load', async (req, res) => {
         }
 
         const animes = await Anime.find({ genres: genreId })
-            .select('name slug imageUrl updatedAt type status')
+            .select('name slug imageUrl updatedAt type anilistId seasons.seasonNumber seasons.anilistId seasons.episodes')
             .sort({ updatedAt: -1, _id: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
+
+        await attachCardStatuses(animes);
 
         res.json(animes);
     } catch (err) {
@@ -284,6 +423,7 @@ router.get('/api/trending-picks', async (req, res) => {
                     averageScore
                     duration
                     seasonYear
+                    episodes
                     status
                 }
             }

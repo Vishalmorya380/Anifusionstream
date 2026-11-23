@@ -87,6 +87,15 @@
                             <a href="/anime/<%= anime.slug || anime._id %>">
                                 <div class="relative">
                                     <img src="<%= anime.imageUrl %>" alt="<%= anime.name %>" class="w-full aspect-[2/3] object-cover rounded-lg md:rounded-xl shadow-lg">
+                                    <% if (anime.cardStatus === 'Ongoing') { %>
+                                        <div class="absolute top-1.5 left-1.5 bg-blue-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                            ONGOING
+                                        </div>
+                                    <% } else if (anime.cardStatus === 'Completed') { %>
+                                        <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                            COMPLETED
+                                        </div>
+                                    <% } %>
                                     <% if(anime.type === 'movie') { %>
                                         <div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">MOVIE</div>
                                     <% } %>
@@ -221,11 +230,14 @@
                                     <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
                                         <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <% const daysDiff = (new Date() - new Date(anime.updatedAt)) / (1000 * 60 * 60 * 24);
-                                        if(daysDiff <= 3) { %>
-                                        <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">
-                                            UPDATED
-                                        </div>
+                                        <% if (anime.cardStatus === 'Ongoing') { %>
+                                            <div class="absolute top-1.5 left-1.5 bg-blue-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                                ONGOING
+                                            </div>
+                                        <% } else if (anime.cardStatus === 'Completed') { %>
+                                            <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                                COMPLETED
+                                            </div>
                                         <% } %>
                                     </div>
                                     <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
@@ -265,6 +277,15 @@
                                     <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
                                         <img src="<%= anime.imageUrl %>" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <% if (anime.cardStatus === 'Ongoing') { %>
+                                            <div class="absolute top-1.5 left-1.5 bg-blue-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                                ONGOING
+                                            </div>
+                                        <% } else if (anime.cardStatus === 'Completed') { %>
+                                            <div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">
+                                                COMPLETED
+                                            </div>
+                                        <% } %>
                                     </div>
                                     <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">
                                         <%= anime.name %>
@@ -615,8 +636,15 @@ loadSchedule();
                 }
 
                 animes.forEach((anime, index) => {
-                    const isUpdated = (new Date() - new Date(anime.updatedAt)) / (1000 * 60 * 60 * 24) <= 3;
                     const isMovie = anime.type === 'movie';
+                    let statusBadge = '';
+                    if (!isMovie) {
+                        if (anime.cardStatus === 'Ongoing') {
+                            statusBadge = '<div class="absolute top-1.5 left-1.5 bg-blue-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">ONGOING</div>';
+                        } else if (anime.cardStatus === 'Completed') {
+                            statusBadge = '<div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10 uppercase">COMPLETED</div>';
+                        }
+                    }
 
                     const card = document.createElement('div');
                     card.className = "anime-card-glass flex-shrink-0 w-[120px] sm:w-[140px] md:w-48 snap-center p-1 md:p-1.5 rounded-xl";
@@ -626,7 +654,7 @@ loadSchedule();
                             <div class="relative rounded-lg md:rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
                                 <img src="${anime.imageUrl}" loading="lazy" class="w-full aspect-[2/3] object-cover group-hover:scale-105 transition-transform duration-700">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                ${isUpdated ? '<div class="absolute top-1.5 left-1.5 bg-green-600/90 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">UPDATED</div>' : ''}
+                                ${statusBadge}
                                 ${isMovie ? '<div class="absolute top-1 right-1 bg-red-600/80 backdrop-blur-md text-[10px] md:text-[11px] font-black text-white px-2 py-0.5 rounded border border-white/10">MOVIE</div>' : ''}
                             </div>
                             <p class="mt-2 text-white text-[11px] md:text-sm font-bold text-center line-clamp-2 leading-tight h-7 md:h-10 group-hover:text-blue-400">${anime.name}</p>
