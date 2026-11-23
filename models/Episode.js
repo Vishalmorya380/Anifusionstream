@@ -39,12 +39,12 @@ const episodeSchema = new mongoose.Schema({
     episodeNumber: {
         type: Number,
         required: true,
-        min: 1
+        min: 0
     },
     seasonNumber: {
         type: Number,
         required: true,
-        min: 1
+        min: 0
     },
     anime: {
         type: mongoose.Schema.Types.ObjectId,

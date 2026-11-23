@@ -286,7 +286,7 @@
             <!-- Per-Season AniList IDs -->
             <div class="mb-8 p-5 rounded-2xl bg-black/20 border border-white/10" id="seasonIdsSection">
                 <div class="flex items-center justify-between mb-4">
-                    <label class="ui-label mb-0">Season AniList IDs <span class="text-gray-500 text-xs font-normal ml-2">(Per-Season Sync Mapping)</span></label>
+                    <label class="ui-label mb-0">Season AniList IDs <span class="text-gray-500 text-xs font-normal ml-2">(0 = OVA/Specials)</span></label>
                     <button type="button" id="addSeasonRowBtn" class="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold uppercase hover:bg-blue-600 hover:text-white transition-all">
                         + Add Season
                     </button>
@@ -296,7 +296,7 @@
                         <% anime.seasons.forEach(season => { %>
                             <div class="grid grid-cols-12 gap-3 items-center season-row">
                                 <div class="col-span-4">
-                                    <input type="number" name="seasonNumbers[]" value="<%= season.seasonNumber %>" min="1" class="ui-input" readonly>
+                                    <input type="number" name="seasonNumbers[]" value="<%= season.seasonNumber %>" min="0" class="ui-input" readonly>
                                 </div>
                                 <div class="col-span-8">
                                     <input type="number" name="seasonAnilistIds[]" value="<%= season.anilistId || '' %>" min="1" class="ui-input" placeholder="Season <%= season.seasonNumber %> AniList ID">
@@ -306,10 +306,10 @@
                     <% } else { %>
                         <div class="grid grid-cols-12 gap-3 items-center season-row">
                             <div class="col-span-4">
-                                <input type="number" name="seasonNumbers[]" value="2" min="2" class="ui-input" placeholder="Season #">
+                                <input type="number" name="seasonNumbers[]" value="2" min="0" class="ui-input" placeholder="Season #">
                             </div>
                             <div class="col-span-7">
-                                <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season 2 AniList ID (Optional)">
+                                <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season AniList ID (Optional)">
                             </div>
                             <div class="col-span-1 text-right">
                                 <button type="button" class="remove-season-btn text-red-400 hover:text-red-300 font-bold text-lg px-2">&times;</button>
@@ -352,6 +352,16 @@
                 <label class="ui-label">Special Information / Announcements</label>
                 <textarea name="specialInfo" rows="3" class="ui-input" placeholder="e.g. MORE EPISODE WILL BE ADDED AFTER RELEASE..." maxlength="500"><%= anime.specialInfo || '' %></textarea>
                 <p class="text-[10px] text-gray-500 mt-2 italic">Note: This will only appear on the anime page if you write something here.</p>
+            </div>
+
+            <div class="mb-6 p-4 rounded-2xl bg-black/20 border border-white/10">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="bumpToTop" value="1" class="w-4 h-4 accent-blue-500">
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-white block">Move to First Position</span>
+                        <span class="text-[10px] text-gray-400">Sirf tab tick karo jab is anime ko homepage par sabse aage lana ho.</span>
+                    </div>
+                </label>
             </div>
 
             <button type="submit" class="ui-button" id="submitBtn">
@@ -425,14 +435,14 @@
         if (addBtn && container) {
             addBtn.addEventListener('click', () => {
                 const nums = Array.from(container.querySelectorAll('input[name="seasonNumbers[]"]'))
-                    .map(el => Number(el.value) || 1);
+                    .map(el => (el.value !== '' ? Number(el.value) : 1));
                 const nextSeason = nums.length ? Math.max(...nums) + 1 : 2;
 
                 const row = document.createElement('div');
                 row.className = 'grid grid-cols-12 gap-3 items-center season-row';
                 row.innerHTML = `
                     <div class="col-span-4">
-                        <input type="number" name="seasonNumbers[]" value="${nextSeason}" min="2" class="ui-input" placeholder="Season #">
+                        <input type="number" name="seasonNumbers[]" value="${nextSeason}" min="0" class="ui-input" placeholder="Season #">
                     </div>
                     <div class="col-span-7">
                         <input type="number" name="seasonAnilistIds[]" min="1" class="ui-input" placeholder="Season ${nextSeason} AniList ID (Optional)">

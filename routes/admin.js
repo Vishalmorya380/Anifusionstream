@@ -354,15 +354,16 @@ router.post('/add-anime', ensureAuthenticatedAdmin, async (req, res) => {
             animeData.tmdbId = Number(tmdbId);
         }
 
-        // Build per-season AniList IDs ONLY when an AniList ID is actually filled
+        // Build per-season AniList IDs ONLY when an AniList ID is actually filled (0 = OVA/Specials allowed)
         const sNums = toArray(seasonNumbers);
         const sIds = toArray(seasonAnilistIds);
         const seenSeasons = new Set();
 
         for (let i = 0; i < sNums.length; i++) {
+            if (sNums[i] === '' || sNums[i] === undefined || sNums[i] === null) continue;
             const sNum = Number(sNums[i]);
             const sAlId = sIds[i] && !isNaN(Number(sIds[i])) ? Number(sIds[i]) : undefined;
-            if (sNum >= 1 && sAlId && !seenSeasons.has(sNum)) {
+            if (!isNaN(sNum) && sNum >= 0 && sAlId && !seenSeasons.has(sNum)) {
                 seenSeasons.add(sNum);
                 animeData.seasons.push({
                     seasonNumber: sNum,
@@ -435,7 +436,7 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
         const {
             name, imageUrl, description, genres, specialInfo,
             type, languageFormat, anilistId, tmdbId,
-            seasonNumbers, seasonAnilistIds
+            seasonNumbers, seasonAnilistIds, bumpToTop
         } = req.body;
         const trimmedName = name.trim();
 
@@ -459,13 +460,14 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
         anime.anilistId = (anilistId && !isNaN(Number(anilistId))) ? Number(anilistId) : undefined;
         anime.tmdbId = (tmdbId && !isNaN(Number(tmdbId))) ? Number(tmdbId) : undefined;
 
-        // Update per-season AniList IDs WITHOUT wiping existing episodes
+        // Update per-season AniList IDs WITHOUT wiping existing episodes (0 = OVA/Specials allowed)
         const sNums = toArray(seasonNumbers);
         const sIds = toArray(seasonAnilistIds);
 
         for (let i = 0; i < sNums.length; i++) {
+            if (sNums[i] === '' || sNums[i] === undefined || sNums[i] === null) continue;
             const sNum = Number(sNums[i]);
-            if (!sNum || sNum < 1) continue;
+            if (isNaN(sNum) || sNum < 0) continue;
 
             const sAlId = (sIds[i] && !isNaN(Number(sIds[i]))) ? Number(sIds[i]) : undefined;
             const existingSeason = anime.seasons.find(s => s.seasonNumber === sNum);
@@ -481,7 +483,8 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
                 });
             }
         }
-// If Season 1 doesn't exist yet but main AniList ID is provided, initialize Season 1
+
+        // If Season 1 doesn't exist yet but main AniList ID is provided, initialize Season 1
         if (anime.type === 'series' && anime.anilistId && !anime.seasons.some(s => s.seasonNumber === 1)) {
             anime.seasons.unshift({
                 seasonNumber: 1,
@@ -491,9 +494,13 @@ router.post('/edit-anime/:id', ensureAuthenticatedAdmin, async (req, res) => {
         }
 
         anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
-        anime.updatedAt = new Date();
 
-        await anime.save();
+        if (bumpToTop) {
+            anime.updatedAt = new Date();
+            await anime.save();
+        } else {
+            await anime.save({ timestamps: false });
+        }
 
         req.flash('success', 'Metadata Refined: Anime details & season IDs saved.');
         res.redirect(`${adminBase}/dashboard`);
@@ -601,10 +608,10 @@ router.post('/add-episode/:animeId', ensureAuthenticatedAdmin, async (req, res) 
             return res.redirect(`${adminBase}/add-episode/${animeId}`);
         }
 
-        const season = anime.type === 'movie' ? 1 : parseInt(seasonNumber);
-        const episode = anime.type === 'movie' ? 1 : parseInt(episodeNumber);
+        const season = anime.type === 'movie' ? 1 : parseInt(seasonNumber, 10);
+        const episode = anime.type === 'movie' ? 1 : parseInt(episodeNumber, 10);
 
-        if (isNaN(season) || isNaN(episode) || season < 1 || episode < 1) {
+        if (isNaN(season) || isNaN(episode) || season < 0 || episode < 0) {
             req.flash('error', 'Invalid season or episode number');
             return res.redirect(`${adminBase}/add-episode/${animeId}`);
         }
@@ -704,7 +711,11 @@ router.post('/edit-episode/:episodeId', ensureAuthenticatedAdmin, async (req, re
         const epNum = Number(episodeNumber);
         const sNum = Number(seasonNumber);
 
-        if (!epNum || !sNum || epNum < 1 || sNum < 1) {
+        if (
+            episodeNumber === '' || seasonNumber === '' ||
+            episodeNumber === undefined || seasonNumber === undefined ||
+            isNaN(epNum) || isNaN(sNum) || epNum < 0 || sNum < 0
+        ) {
             req.flash('error', 'Invalid season or episode number.');
             return res.redirect(`${adminBase}/edit-episode/${episodeId}`);
         }
@@ -778,6 +789,7 @@ router.post('/edit-episode/:episodeId', ensureAuthenticatedAdmin, async (req, re
                     newSeason.episodes.push(episodeId);
                 }
             }
+            anime.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
             await anime.save();
         }
 

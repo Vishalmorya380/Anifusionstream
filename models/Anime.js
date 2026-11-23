@@ -39,7 +39,7 @@ const animeSchema = new mongoose.Schema({
     index: true 
   }],
   seasons: [{
-    seasonNumber: { type: Number, required: true, min: 1 },
+    seasonNumber: { type: Number, required: true, min: 0 },
     anilistId: { type: Number, sparse: true }, // Per-season AniList ID for VidSync & AniEmbed
     episodes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Episode' }]
   }],

@@ -265,13 +265,13 @@
             <% } else { %>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
-                    <label class="ui-label">Episode Number</label>
-                    <input type="number" name="episodeNumber" value="<%= episode.episodeNumber %>" class="ui-input" required min="1">
+                    <label class="ui-label">Episode Number <span class="text-[9px] text-gray-500 font-normal ml-1">(0 allowed)</span></label>
+                    <input type="number" name="episodeNumber" value="<%= episode.episodeNumber %>" class="ui-input" required min="0">
                     <span class="text-[9px] text-yellow-500 mt-2 block uppercase font-bold">Warning: Changing affects order</span>
                 </div>
                 <div>
-                    <label class="ui-label">Season Number</label>
-                    <input type="number" name="seasonNumber" value="<%= episode.seasonNumber %>" class="ui-input" required min="1">
+                    <label class="ui-label">Season Number <span class="text-[9px] text-gray-500 font-normal ml-1">(0 = OVA/Specials)</span></label>
+                    <input type="number" name="seasonNumber" value="<%= episode.seasonNumber %>" class="ui-input" required min="0">
                     <span class="text-[9px] text-yellow-500 mt-2 block uppercase font-bold">Warning: Will move episode</span>
                 </div>
             </div>

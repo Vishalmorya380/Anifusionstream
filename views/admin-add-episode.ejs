@@ -305,19 +305,19 @@ if (typeof anime !== 'undefined' && anime && anime.seasons) {
             <% } else { %>
             <div class="grid grid-cols-2 gap-5 mb-8">
                 <div>
-                    <label class="ui-label">Season</label>
-                    <input type="number" name="seasonNumber" placeholder="1" class="ui-input" required min="1" max="50">
+                    <label class="ui-label">Season <span class="text-[9px] text-gray-500 font-normal ml-1">(0 = OVA/Specials)</span></label>
+                    <input type="number" name="seasonNumber" placeholder="1" class="ui-input" required min="0" max="50">
                 </div>
                 <div>
-                    <label class="ui-label">Episode</label>
-                    <input type="number" name="episodeNumber" placeholder="1" class="ui-input" required min="1" max="999">
+                    <label class="ui-label">Episode <span class="text-[9px] text-gray-500 font-normal ml-1">(0 allowed)</span></label>
+                    <input type="number" name="episodeNumber" placeholder="1" class="ui-input" required min="0" max="9999">
                 </div>
             </div>
             <% } %>
 
             <div class="mb-8">
                 <label class="ui-label"><%= anime.type === 'movie' ? 'Movie Title' : 'Episode Title' %></label>
-                <input type="text" name="title" placeholder="<%= anime.type === 'movie' ? anime.name : 'e.g. The Awakening' %>" class="ui-input" required maxlength="200">
+                <input type="text" name="title" placeholder="<%= anime.type === 'movie' ? anime.name : 'e.g. The Awakening or OVA 1' %>" class="ui-input" required maxlength="200">
             </div>
 
             <div class="mb-8">
